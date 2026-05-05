@@ -1,0 +1,225 @@
+import * as cheerio from "cheerio";
+import iconv from "iconv-lite";
+import type {
+  Match,
+  MatchStatus,
+  Schedule,
+  ScheduleStats,
+  Sport,
+} from "./types";
+import { dateBEToISO, parseDateBE } from "./date";
+
+const BASE_URL = "https://suratgames.sat.or.th/";
+
+const HEADER_LABELS = [
+  "รายการ",
+  "รอบ",
+  "เวลา",
+  "สนาม",
+  "Start List",
+  "Result",
+  "Status",
+];
+
+const FOOTER_REGEX = /^รวม\s.+\s\d+\s+รายการ\s*$/;
+
+function clean(text: string): string {
+  return text
+    .replace(/\u00a0/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function absUrl(href: string | undefined | null): string | null {
+  if (!href) return null;
+  const trimmed = href.trim();
+  if (!trimmed || trimmed === "#") return null;
+  try {
+    return new URL(trimmed, BASE_URL).toString();
+  } catch {
+    return null;
+  }
+}
+
+function pickQueryParam(url: string | null, key: string): string | null {
+  if (!url) return null;
+  try {
+    const u = new URL(url);
+    return u.searchParams.get(key);
+  } catch {
+    return null;
+  }
+}
+
+function detectStatus($cell: cheerio.Cheerio<any>): MatchStatus {
+  const imgSrc = ($cell.find("img").attr("src") || "").toLowerCase();
+  if (imgSrc.includes("running")) return "LIVE";
+  const text = clean($cell.text()).toLowerCase();
+  if (text === "official") return "FINISHED";
+  return "PENDING";
+}
+
+function buildSourceUrl(dateBE: string): string {
+  return `${BASE_URL}compettable2-dwt.asp?dateid=${encodeURIComponent(dateBE)}`;
+}
+
+export async function fetchSchedule(dateBE: string): Promise<Schedule> {
+  const parts = parseDateBE(dateBE);
+  if (!parts) {
+    throw new Error(
+      `รูปแบบวันที่ไม่ถูกต้อง: ${dateBE} (ต้องเป็น DD/MM/YYYY แบบ พ.ศ.)`
+    );
+  }
+
+  const sourceUrl = buildSourceUrl(dateBE);
+
+  const res = await fetch(sourceUrl, {
+    cache: "no-store",
+    headers: {
+      "User-Agent":
+        "Mozilla/5.0 (compatible; SuratGamesDashboard/1.0; +https://suratgames.sat.or.th)",
+      Accept: "text/html,application/xhtml+xml",
+    },
+  });
+
+  if (!res.ok) {
+    throw new Error(`เซิร์ฟเวอร์ต้นทางตอบกลับ ${res.status} ${res.statusText}`);
+  }
+
+  const buf = Buffer.from(await res.arrayBuffer());
+  const html = iconv.decode(buf, "windows-874");
+  const $ = cheerio.load(html);
+
+  const allTrs = $("tr").toArray();
+
+  type Section = { headerIdx: number; footerIdx: number };
+  const sections: Section[] = [];
+
+  const headerIdxs: number[] = [];
+  const footerIdxs: number[] = [];
+
+  allTrs.forEach((el, i) => {
+    const cells = $(el)
+      .children("td,th")
+      .toArray()
+      .map((c) => clean($(c).text()));
+    if (
+      cells.length >= 7 &&
+      cells[0] === HEADER_LABELS[0] &&
+      cells[1] === HEADER_LABELS[1] &&
+      cells[2] === HEADER_LABELS[2] &&
+      cells[3] === HEADER_LABELS[3]
+    ) {
+      headerIdxs.push(i);
+      return;
+    }
+    const txt = clean($(el).text());
+    if (FOOTER_REGEX.test(txt)) {
+      footerIdxs.push(i);
+    }
+  });
+
+  for (const hi of headerIdxs) {
+    const fi = footerIdxs.find((f) => f > hi);
+    if (fi !== undefined) sections.push({ headerIdx: hi, footerIdx: fi });
+  }
+
+  const sports: Sport[] = [];
+
+  for (const { headerIdx, footerIdx } of sections) {
+    const sportName = clean($(allTrs[headerIdx - 1]).text()) || "ไม่ทราบชนิดกีฬา";
+    const matches: Match[] = [];
+
+    for (let i = headerIdx + 1; i < footerIdx; i++) {
+      const tr = allTrs[i];
+      const $tr = $(tr);
+      const cells = $tr.children("td,th").toArray();
+      if (cells.length < 7) continue;
+
+      const $event = $(cells[0]);
+      const $round = $(cells[1]);
+      const $time = $(cells[2]);
+      const $venue = $(cells[3]);
+      const $startList = $(cells[4]);
+      const $result = $(cells[5]);
+      const $status = $(cells[6]);
+
+      const event = clean($event.text());
+      const round = clean($round.text());
+      const time = clean($time.text());
+      if (!time && !event) continue;
+
+      const venueText = clean($venue.text());
+      const venue = venueText && venueText !== "-" ? venueText : null;
+      const venueUrl = absUrl($venue.find("a").attr("href"));
+
+      const startListUrl = absUrl($startList.find("a").attr("href"));
+      const resultUrl = absUrl($result.find("a").attr("href"));
+
+      const status = detectStatus($status);
+
+      const idSource =
+        pickQueryParam(resultUrl, "stche_id") ||
+        pickQueryParam(startListUrl, "stche_id") ||
+        pickQueryParam(venueUrl, "stche_id");
+      const sportId =
+        pickQueryParam(resultUrl, "st_sportid") ||
+        pickQueryParam(venueUrl, "st_sportid");
+
+      const id = idSource || `${sportName}-${time}-${event}-${i}`;
+
+      matches.push({
+        id,
+        sportId,
+        sport: sportName,
+        event,
+        round,
+        time,
+        venue,
+        venueUrl,
+        startListUrl,
+        resultUrl,
+        status,
+      });
+    }
+
+    const liveCount = matches.filter((m) => m.status === "LIVE").length;
+    const finishedCount = matches.filter((m) => m.status === "FINISHED").length;
+    const pendingCount = matches.filter((m) => m.status === "PENDING").length;
+
+    sports.push({
+      name: sportName,
+      total: matches.length,
+      liveCount,
+      finishedCount,
+      pendingCount,
+      matches,
+    });
+  }
+
+  const stats: ScheduleStats = sports.reduce(
+    (acc, s) => ({
+      totalSports: acc.totalSports + 1,
+      totalMatches: acc.totalMatches + s.total,
+      liveMatches: acc.liveMatches + s.liveCount,
+      finishedMatches: acc.finishedMatches + s.finishedCount,
+      pendingMatches: acc.pendingMatches + s.pendingCount,
+    }),
+    {
+      totalSports: 0,
+      totalMatches: 0,
+      liveMatches: 0,
+      finishedMatches: 0,
+      pendingMatches: 0,
+    }
+  );
+
+  return {
+    dateBE,
+    dateAD: dateBEToISO(parts),
+    fetchedAt: new Date().toISOString(),
+    sourceUrl,
+    sports,
+    stats,
+  };
+}
