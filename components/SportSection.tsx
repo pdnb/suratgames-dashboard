@@ -1,5 +1,6 @@
 "use client";
 
+import type { MatchLayoutMode } from "@/lib/match-layout";
 import type { Match, Sport } from "@/lib/types";
 import { ChevronDown, ChevronUp, Radio } from "lucide-react";
 import { useState } from "react";
@@ -8,6 +9,7 @@ import MatchRow from "./MatchRow";
 interface Props {
   sport: Sport;
   matches: Match[];
+  layout: MatchLayoutMode;
 }
 
 const STATUS_ORDER: Record<Match["status"], number> = {
@@ -16,7 +18,7 @@ const STATUS_ORDER: Record<Match["status"], number> = {
   FINISHED: 2,
 };
 
-export default function SportSection({ sport, matches }: Props) {
+export default function SportSection({ sport, matches, layout }: Props) {
   const [collapsed, setCollapsed] = useState(false);
 
   const sorted = [...matches].sort((a, b) => {
@@ -79,9 +81,15 @@ export default function SportSection({ sport, matches }: Props) {
               ไม่ตรงกับตัวกรอง
             </p>
           ) : (
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            <div
+              className={
+                layout === "grid"
+                  ? "grid gap-3 sm:grid-cols-2 xl:grid-cols-3"
+                  : "flex flex-col gap-2"
+              }
+            >
               {sorted.map((m) => (
-                <MatchRow key={m.id} match={m} />
+                <MatchRow key={m.id} match={m} variant={layout} />
               ))}
             </div>
           )}

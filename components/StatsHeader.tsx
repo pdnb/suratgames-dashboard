@@ -4,6 +4,7 @@ import {
   CheckCircle2,
   Clock,
   Layers,
+  Medal,
   Radio,
   Trophy,
 } from "lucide-react";
@@ -17,7 +18,13 @@ interface CardProps {
   icon: LucideIcon;
   label: string;
   value: number | string;
-  tone?: "default" | "live" | "finished" | "pending" | "primary";
+  tone?:
+    | "default"
+    | "live"
+    | "finished"
+    | "pending"
+    | "primary"
+    | "championship";
 }
 
 function StatCard({ icon: Icon, label, value, tone = "default" }: CardProps) {
@@ -28,9 +35,11 @@ function StatCard({ icon: Icon, label, value, tone = "default" }: CardProps) {
         ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:border-emerald-400/30 dark:text-emerald-300"
         : tone === "pending"
           ? "border-slate-400/40 bg-slate-500/10 text-slate-700 dark:border-slate-400/20 dark:text-slate-300"
-          : tone === "primary"
-            ? "border-sky-500/40 bg-sky-500/10 text-sky-700 dark:border-sky-400/30 dark:text-sky-200"
-            : "border-slate-900/10 bg-slate-900/5 text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-200";
+          : tone === "championship"
+            ? "border-amber-500/35 bg-amber-500/8 text-amber-900 dark:border-amber-400/25 dark:bg-amber-400/7 dark:text-amber-100"
+            : tone === "primary"
+              ? "border-sky-500/40 bg-sky-500/10 text-sky-700 dark:border-sky-400/30 dark:text-sky-200"
+              : "border-slate-900/10 bg-slate-900/5 text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-200";
 
   return (
     <div className={`rounded-2xl border p-4 ${toneCls}`}>
@@ -47,7 +56,7 @@ function StatCard({ icon: Icon, label, value, tone = "default" }: CardProps) {
 
 export default function StatsHeader({ stats }: Props) {
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
       <StatCard
         icon={Layers}
         label="ชนิดกีฬา"
@@ -59,6 +68,18 @@ export default function StatsHeader({ stats }: Props) {
         label="รายการทั้งหมด"
         value={stats.totalMatches}
       />
+      <StatCard
+        icon={Trophy}
+        label="รอบชิงชนะเลิศ"
+        value={stats.championshipMatchCount}
+        tone="championship"
+      />
+      {/* <StatCard
+        icon={Medal}
+        label="เหรียญทอง (ตามรายการชิง)"
+        value={stats.goldMedalEvents}
+        tone="primary"
+      /> */}
       <StatCard
         icon={Radio}
         label="กำลังแข่ง"

@@ -1,6 +1,8 @@
 import * as cheerio from "cheerio";
 import iconv from "iconv-lite";
+import { isChampionshipRound } from "./championship-round";
 import type {
+  ChampionshipSummaryRow,
   Match,
   MatchStatus,
   Schedule,
@@ -197,7 +199,7 @@ export async function fetchSchedule(dateBE: string): Promise<Schedule> {
     });
   }
 
-  const stats: ScheduleStats = sports.reduce(
+  const statsBase = sports.reduce(
     (acc, s) => ({
       totalSports: acc.totalSports + 1,
       totalMatches: acc.totalMatches + s.total,
@@ -214,6 +216,26 @@ export async function fetchSchedule(dateBE: string): Promise<Schedule> {
     }
   );
 
+  const championshipSummary: ChampionshipSummaryRow[] = [];
+  for (const s of sports) {
+    for (const m of s.matches) {
+      if (!isChampionshipRound(m.round)) continue;
+      championshipSummary.push({
+        sport: m.sport,
+        event: m.event,
+        round: m.round,
+        time: m.time,
+      });
+    }
+  }
+
+  const nFinals = championshipSummary.length;
+  const stats: ScheduleStats = {
+    ...statsBase,
+    championshipMatchCount: nFinals,
+    goldMedalEvents: nFinals,
+  };
+
   return {
     dateBE,
     dateAD: dateBEToISO(parts),
@@ -221,5 +243,6 @@ export async function fetchSchedule(dateBE: string): Promise<Schedule> {
     sourceUrl,
     sports,
     stats,
+    championshipSummary,
   };
 }
