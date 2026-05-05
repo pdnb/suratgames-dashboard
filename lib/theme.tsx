@@ -27,7 +27,7 @@ function readInitialTheme(): Theme {
       ? "dark"
       : "light";
   }
-  return "dark";
+  return "light";
 }
 
 function applyTheme(theme: Theme) {

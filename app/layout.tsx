@@ -18,7 +18,7 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
-const themeBootScript = `(function(){try{var s=localStorage.getItem('theme');var d=s?s==='dark':window.matchMedia('(prefers-color-scheme: dark)').matches;document.documentElement.classList.toggle('dark',d);}catch(e){}})();`;
+const themeBootScript = `(function(){try{var s=localStorage.getItem('theme');var d=s?s==='dark':false;document.documentElement.classList.toggle('dark',d);}catch(e){}})();`;
 
 export default function RootLayout({
   children,

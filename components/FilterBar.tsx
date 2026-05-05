@@ -11,11 +11,20 @@ interface SportOption {
   liveCount: number;
 }
 
+interface RoundOption {
+  name: string;
+  total: number;
+}
+
 interface Props {
   sports: SportOption[];
   selectedSports: Set<string>;
   onToggleSport: (name: string) => void;
   onClearSports: () => void;
+  rounds: RoundOption[];
+  selectedRounds: Set<string>;
+  onToggleRound: (name: string) => void;
+  onClearRounds: () => void;
   statusFilter: StatusFilter;
   onStatusChange: (s: StatusFilter) => void;
   search: string;
@@ -50,6 +59,10 @@ export default function FilterBar({
   selectedSports,
   onToggleSport,
   onClearSports,
+  rounds,
+  selectedRounds,
+  onToggleRound,
+  onClearRounds,
   statusFilter,
   onStatusChange,
   search,
@@ -59,6 +72,9 @@ export default function FilterBar({
     <div className="space-y-3 rounded-2xl border border-slate-900/10 bg-[var(--color-bg-soft)]/70 p-4 backdrop-blur-sm dark:border-white/10">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-500">
+            สถานะ
+          </span>
           {STATUS_OPTIONS.map((opt) => {
             const active = statusFilter === opt.id;
             return (
@@ -129,6 +145,39 @@ export default function FilterBar({
                 {s.name}
                 <span className="text-[10px] tabular-nums opacity-60">
                   {s.total}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {rounds.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-500">
+            รอบ
+          </span>
+          <button
+            type="button"
+            onClick={onClearRounds}
+            data-active={selectedRounds.size === 0}
+            className="rounded-full border border-slate-900/10 bg-slate-900/5 px-2.5 py-1 text-xs text-slate-600 transition hover:border-slate-900/20 data-[active=true]:border-sky-500/60 data-[active=true]:bg-sky-500/15 data-[active=true]:text-sky-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:border-white/20 dark:data-[active=true]:border-sky-400/50 dark:data-[active=true]:text-sky-200"
+          >
+            ทั้งหมด
+          </button>
+          {rounds.map((r) => {
+            const active = selectedRounds.has(r.name);
+            return (
+              <button
+                key={r.name}
+                type="button"
+                onClick={() => onToggleRound(r.name)}
+                data-active={active}
+                className="inline-flex items-center gap-1.5 rounded-full border border-slate-900/10 bg-slate-900/5 px-2.5 py-1 text-xs text-slate-600 transition hover:border-slate-900/20 data-[active=true]:border-sky-500/60 data-[active=true]:bg-sky-500/15 data-[active=true]:text-sky-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:border-white/20 dark:data-[active=true]:border-sky-400/50 dark:data-[active=true]:text-sky-200"
+              >
+                {r.name}
+                <span className="text-[10px] tabular-nums opacity-60">
+                  {r.total}
                 </span>
               </button>
             );

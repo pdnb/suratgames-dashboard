@@ -4,7 +4,6 @@ import {
   CheckCircle2,
   Clock,
   Layers,
-  Medal,
   Radio,
   Trophy,
 } from "lucide-react";
@@ -18,6 +17,7 @@ interface CardProps {
   icon: LucideIcon;
   label: string;
   value: number | string;
+  valueLabel?: string;
   tone?:
     | "default"
     | "live"
@@ -25,9 +25,26 @@ interface CardProps {
     | "pending"
     | "primary"
     | "championship";
+  /** Shown below the label row (e.g. “Live” on the live card). */
+  subLabel?: string;
+  /** Appended after the main value with slightly smaller type (e.g. “แห่ง”). */
+  valueSuffix?: string;
+  /** Optional second value shown as `/ <label> <value>`. */
+  secondaryValue?: number | string;
+  secondaryLabel?: string;
 }
 
-function StatCard({ icon: Icon, label, value, tone = "default" }: CardProps) {
+function StatCard({
+  icon: Icon,
+  label,
+  value,
+  valueLabel,
+  tone = "default",
+  subLabel,
+  valueSuffix,
+  secondaryValue,
+  secondaryLabel,
+}: CardProps) {
   const toneCls =
     tone === "live"
       ? "border-red-500/40 bg-red-500/10 text-red-700 dark:border-red-400/40 dark:text-red-300"
@@ -43,61 +60,101 @@ function StatCard({ icon: Icon, label, value, tone = "default" }: CardProps) {
 
   return (
     <div className={`rounded-2xl border p-4 ${toneCls}`}>
-      <div className="flex items-center justify-between">
-        <span className="text-xs font-medium uppercase tracking-wider opacity-80">
-          {label}
-        </span>
-        <Icon size={16} className="opacity-80" />
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0 flex-1">
+          <span className="text-xs font-medium uppercase tracking-wider opacity-80">
+            {label}
+          </span>
+          {subLabel ? (
+            <div className="mt-0.5 text-[11px] font-semibold uppercase tracking-wide opacity-90">
+              {subLabel}
+            </div>
+          ) : null}
+        </div>
+        <Icon size={16} className="mt-0.5 shrink-0 opacity-80" />
       </div>
-      <div className="mt-2 text-3xl font-bold tabular-nums">{value}</div>
+      <div className="mt-2 flex flex-wrap items-baseline gap-x-1 gap-y-0">
+        {valueLabel ? (
+          <span className="text-sm font-semibold opacity-90">{valueLabel}</span>
+        ) : null}
+        <span className="text-3xl font-bold tabular-nums">{value}</span>
+        {valueSuffix ? (
+          <span className="text-xl font-semibold tabular-nums opacity-90">
+            {valueSuffix}
+          </span>
+        ) : null}
+        {secondaryValue !== undefined ? (
+          <>
+            <span className="px-1 text-base font-semibold opacity-75">/</span>
+            {secondaryLabel ? (
+              <span className="text-sm font-semibold opacity-90">
+                {secondaryLabel}
+              </span>
+            ) : null}
+            <span className="text-2xl font-bold tabular-nums">
+              {secondaryValue}
+            </span>
+          </>
+        ) : null}
+      </div>
     </div>
   );
 }
 
 export default function StatsHeader({ stats }: Props) {
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
-      <StatCard
-        icon={Layers}
-        label="ชนิดกีฬา"
-        value={stats.totalSports}
-        tone="primary"
-      />
-      <StatCard
-        icon={Activity}
-        label="รายการทั้งหมด"
-        value={stats.totalMatches}
-      />
-      <StatCard
-        icon={Trophy}
-        label="รอบชิงชนะเลิศ"
-        value={stats.championshipMatchCount}
-        tone="championship"
-      />
-      {/* <StatCard
-        icon={Medal}
-        label="เหรียญทอง (ตามรายการชิง)"
-        value={stats.goldMedalEvents}
-        tone="primary"
-      /> */}
-      <StatCard
-        icon={Radio}
-        label="กำลังแข่ง"
-        value={stats.liveMatches}
-        tone="live"
-      />
-      <StatCard
-        icon={CheckCircle2}
-        label="จบแล้ว"
-        value={stats.finishedMatches}
-        tone="finished"
-      />
-      <StatCard
-        icon={Clock}
-        label="รอแข่ง"
-        value={stats.pendingMatches}
-        tone="pending"
-      />
+    <div className="grid grid-cols-12 gap-3">
+      <div className="col-span-12 sm:col-span-4 md:col-span-3">
+        <StatCard
+          icon={Layers}
+          label="ชนิดกีฬา"
+          value={stats.totalSports}
+          tone="primary"
+        />
+      </div>
+      <div className="col-span-12 sm:col-span-9 md:col-span-9">
+        <StatCard
+          icon={Trophy}
+          label="รอบชิงชนะเลิศ"
+          value={stats.championshipMatchCount}
+          valueLabel="ทั้งหมด"
+          secondaryLabel="ชิงแล้ว"
+          secondaryValue={stats.finishedChampionshipMatchCount}
+          tone="championship"
+        />
+      </div>
+
+      <div className="col-span-6 sm:col-span-3">
+        <StatCard
+          icon={Radio}
+          label="กำลังแข่ง"
+          value={stats.liveMatches}
+          tone="live"
+        />
+      </div>
+      <div className="col-span-6 sm:col-span-3">
+        <StatCard
+          icon={Clock}
+          label="รอแข่ง"
+          value={stats.pendingMatches}
+          tone="pending"
+        />
+      </div>
+      <div className="col-span-6 sm:col-span-3">
+        <StatCard
+          icon={CheckCircle2}
+          label="จบแล้ว"
+          value={stats.finishedMatches}
+          tone="finished"
+        />
+      </div>
+      <div className="col-span-6 sm:col-span-3">
+        <StatCard
+          icon={Activity}
+          label="ทั้งหมด"
+          value={stats.totalMatches}
+        />
+      </div>
     </div>
   );
 }

@@ -3,6 +3,8 @@ import iconv from "iconv-lite";
 import { isChampionshipRound } from "./championship-round";
 import type {
   ChampionshipSummaryRow,
+  MedalRow,
+  MedalTable,
   Match,
   MatchStatus,
   Schedule,
@@ -12,6 +14,7 @@ import type {
 import { dateBEToISO, parseDateBE } from "./date";
 
 const BASE_URL = "https://suratgames.sat.or.th/";
+const MEDAL_URL = `${BASE_URL}total_medal-dwt.asp`;
 
 const HEADER_LABELS = [
   "รายการ",
@@ -63,6 +66,13 @@ function detectStatus($cell: cheerio.Cheerio<any>): MatchStatus {
 
 function buildSourceUrl(dateBE: string): string {
   return `${BASE_URL}compettable2-dwt.asp?dateid=${encodeURIComponent(dateBE)}`;
+}
+
+function parseMedalNumber(value: string): number {
+  const cleaned = clean(value).replace(/,/g, "");
+  if (!cleaned || cleaned === "-") return 0;
+  const n = Number.parseInt(cleaned, 10);
+  return Number.isFinite(n) ? n : 0;
 }
 
 export async function fetchSchedule(dateBE: string): Promise<Schedule> {
@@ -217,6 +227,7 @@ export async function fetchSchedule(dateBE: string): Promise<Schedule> {
   );
 
   const championshipSummary: ChampionshipSummaryRow[] = [];
+  let finishedChampionshipMatchCount = 0;
   for (const s of sports) {
     for (const m of s.matches) {
       if (!isChampionshipRound(m.round)) continue;
@@ -226,6 +237,9 @@ export async function fetchSchedule(dateBE: string): Promise<Schedule> {
         round: m.round,
         time: m.time,
       });
+      if (m.status === "FINISHED") {
+        finishedChampionshipMatchCount += 1;
+      }
     }
   }
 
@@ -233,6 +247,7 @@ export async function fetchSchedule(dateBE: string): Promise<Schedule> {
   const stats: ScheduleStats = {
     ...statsBase,
     championshipMatchCount: nFinals,
+    finishedChampionshipMatchCount,
     goldMedalEvents: nFinals,
   };
 
@@ -244,5 +259,67 @@ export async function fetchSchedule(dateBE: string): Promise<Schedule> {
     sports,
     stats,
     championshipSummary,
+  };
+}
+
+export async function fetchMedalTable(limit = 10): Promise<MedalTable> {
+  const res = await fetch(MEDAL_URL, {
+    cache: "no-store",
+    headers: {
+      "User-Agent":
+        "Mozilla/5.0 (compatible; SuratGamesDashboard/1.0; +https://suratgames.sat.or.th)",
+      Accept: "text/html,application/xhtml+xml",
+    },
+  });
+
+  if (!res.ok) {
+    throw new Error(`เซิร์ฟเวอร์ต้นทางตอบกลับ ${res.status} ${res.statusText}`);
+  }
+
+  const buf = Buffer.from(await res.arrayBuffer());
+  const html = iconv.decode(buf, "windows-874");
+  const $ = cheerio.load(html);
+
+  const rows: MedalRow[] = [];
+  $("tr").each((_, tr) => {
+    const cells = $(tr).find("td").toArray();
+    if (cells.length < 6) return;
+
+    const rankRaw = clean($(cells[0]).text()).replace(".", "");
+    if (!/^\d+$/.test(rankRaw)) return;
+
+    const province = clean($(cells[2]).text());
+    if (!province) return;
+
+    const gold = parseMedalNumber($(cells[3]).text());
+    const silver = parseMedalNumber($(cells[4]).text());
+    const bronze = parseMedalNumber($(cells[5]).text());
+    const totalCellText = cells[6] ? $(cells[6]).text() : "";
+    const total = parseMedalNumber(totalCellText) || gold + silver + bronze;
+
+    if(total > 0) {
+      rows.push({
+        rank: Number.parseInt(rankRaw, 10),
+        province,
+        gold,
+        silver,
+        bronze,
+        total,
+      });
+    }
+  });
+
+  rows.sort((a, b) => {
+    // if (a.total !== b.total) return b.total - a.total;
+    if (a.gold !== b.gold) return b.gold - a.gold;
+    // if (a.silver !== b.silver) return b.silver - a.silver;
+    // if (a.bronze !== b.bronze) return b.bronze - a.bronze;
+    return a.rank - b.rank;
+  });
+
+  return {
+    fetchedAt: new Date().toISOString(),
+    sourceUrl: MEDAL_URL,
+    rows: rows.slice(0, Math.max(1, limit)),
   };
 }

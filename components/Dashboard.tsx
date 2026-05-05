@@ -1,21 +1,24 @@
 "use client";
 
-import type { Match, MatchStatus, Schedule } from "@/lib/types";
+import type { Match, MatchStatus, MedalTable, Schedule } from "@/lib/types";
 import {
   MATCH_LAYOUT_STORAGE_KEY,
   parseMatchLayout,
   type MatchLayoutMode,
 } from "@/lib/match-layout";
 import { formatThaiLong, todayBE } from "@/lib/date";
+import { compareRounds } from "@/lib/round-order";
 import { AlertTriangle, Trophy } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import useSWR from "swr";
 import DatePickerBE from "./DatePickerBE";
+import ChampionshipSection from "./ChampionshipSection";
 import FilterBar, { type StatusFilter } from "./FilterBar";
 import LayoutModeToggle from "./LayoutModeToggle";
 import RefreshIndicator from "./RefreshIndicator";
 import SportSection from "./SportSection";
-import StatsHeader, { HeroBadge } from "./StatsHeader";
+import StatsHeader from "./StatsHeader";
+import TopMedalsWidget from "./TopMedalsWidget";
 
 const REFRESH_MS = 30_000;
 
@@ -38,10 +41,26 @@ const fetcher = async (url: string): Promise<Schedule> => {
   return res.json();
 };
 
+const medalFetcher = async (url: string): Promise<MedalTable> => {
+  const res = await fetch(url);
+  if (!res.ok) {
+    let detail = "";
+    try {
+      const j = await res.json();
+      detail = j.error || j.detail || "";
+    } catch {
+      // ignore
+    }
+    throw new Error(detail || `โหลดข้อมูลไม่สำเร็จ (${res.status})`);
+  }
+  return res.json();
+};
+
 export default function Dashboard({ initialDate }: Props) {
   const [date, setDate] = useState<string>(initialDate);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
   const [selectedSports, setSelectedSports] = useState<Set<string>>(new Set());
+  const [selectedRounds, setSelectedRounds] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState("");
   const [matchLayout, setMatchLayout] = useState<MatchLayoutMode>("grid");
   const skipLayoutPersistOnce = useRef(true);
@@ -84,6 +103,17 @@ export default function Dashboard({ initialDate }: Props) {
       keepPreviousData: true,
     }
   );
+  const {
+    data: medalData,
+    error: medalError,
+    isLoading: isLoadingMedals,
+    mutate: mutateMedals,
+  } = useSWR<MedalTable>("/api/medals", medalFetcher, {
+    refreshInterval: REFRESH_MS,
+    revalidateOnFocus: true,
+    revalidateOnReconnect: true,
+    keepPreviousData: true,
+  });
 
   const handleToggleSport = useCallback((name: string) => {
     setSelectedSports((prev) => {
@@ -96,7 +126,18 @@ export default function Dashboard({ initialDate }: Props) {
 
   const handleClearSports = useCallback(() => setSelectedSports(new Set()), []);
 
-  const matchPasses = useCallback(
+  const handleToggleRound = useCallback((name: string) => {
+    setSelectedRounds((prev) => {
+      const next = new Set(prev);
+      if (next.has(name)) next.delete(name);
+      else next.add(name);
+      return next;
+    });
+  }, []);
+
+  const handleClearRounds = useCallback(() => setSelectedRounds(new Set()), []);
+
+  const baseMatchPasses = useCallback(
     (m: Match) => {
       if (statusFilter !== "ALL" && m.status !== (statusFilter as MatchStatus))
         return false;
@@ -110,6 +151,33 @@ export default function Dashboard({ initialDate }: Props) {
     },
     [statusFilter, search]
   );
+
+  const matchPasses = useCallback(
+    (m: Match) => {
+      if (!baseMatchPasses(m)) return false;
+      if (selectedRounds.size > 0 && !selectedRounds.has(m.round)) return false;
+      return true;
+    },
+    [baseMatchPasses, selectedRounds]
+  );
+
+  const roundsForFilter = useMemo(() => {
+    if (!data) return [] as { name: string; total: number }[];
+    const useSportFilter = selectedSports.size > 0;
+    const counts = new Map<string, number>();
+    for (const s of data.sports) {
+      if (useSportFilter && !selectedSports.has(s.name)) continue;
+      for (const m of s.matches) {
+        if (!baseMatchPasses(m)) continue;
+        const key = m.round?.trim();
+        if (!key) continue;
+        counts.set(key, (counts.get(key) ?? 0) + 1);
+      }
+    }
+    return Array.from(counts.entries())
+      .map(([name, total]) => ({ name, total }))
+      .sort((a, b) => compareRounds(a.name, b.name));
+  }, [data, selectedSports, baseMatchPasses]);
 
   const filteredSections = useMemo(() => {
     if (!data) return [];
@@ -140,6 +208,7 @@ export default function Dashboard({ initialDate }: Props) {
     finishedMatches: 0,
     pendingMatches: 0,
     championshipMatchCount: 0,
+    finishedChampionshipMatchCount: 0,
     goldMedalEvents: 0,
   };
 
@@ -163,7 +232,7 @@ export default function Dashboard({ initialDate }: Props) {
       <header className="mb-6 space-y-4">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
           <div className="space-y-2">
-            <HeroBadge stats={stats} />
+            {/* <HeroBadge stats={stats} /> */}
             <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50 sm:text-3xl">
               ตารางการแข่งขัน
               <span className="ml-2 text-sky-700 dark:text-sky-300">
@@ -199,8 +268,24 @@ export default function Dashboard({ initialDate }: Props) {
           </div>
         </div>
 
-        <StatsHeader stats={stats} />
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(260px,34%)] lg:items-stretch">
+          <StatsHeader stats={stats} />
+          <TopMedalsWidget
+            data={medalData}
+            isLoading={isLoadingMedals}
+            error={(medalError as Error) ?? null}
+            onRetry={() => mutateMedals()}
+            title="Top 5 เหรียญทอง"
+            maxRows={5}
+            className="h-full min-h-0 lg:min-h-0"
+          />
+        </div>
       </header>
+
+
+      {data && visibleChampionships.length > 0 && (
+        <ChampionshipSection rows={visibleChampionships} />
+      )}
 
       <div className="mb-5">
         <FilterBar
@@ -208,57 +293,16 @@ export default function Dashboard({ initialDate }: Props) {
           selectedSports={selectedSports}
           onToggleSport={handleToggleSport}
           onClearSports={handleClearSports}
+          rounds={roundsForFilter}
+          selectedRounds={selectedRounds}
+          onToggleRound={handleToggleRound}
+          onClearRounds={handleClearRounds}
           statusFilter={statusFilter}
           onStatusChange={setStatusFilter}
           search={search}
           onSearchChange={setSearch}
         />
       </div>
-
-      {data && visibleChampionships.length > 0 && (
-        <section
-          className="mb-5 rounded-2xl border border-amber-500/35 bg-amber-500/8 p-4 dark:border-amber-400/25 dark:bg-amber-400/7"
-          aria-label="รายการรอบชิงชนะเลิศวันนี้"
-        >
-          <details className="group">
-            <summary className="cursor-pointer list-none [&::-webkit-details-marker]:hidden">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="flex items-center gap-2 text-sm font-semibold text-amber-900 dark:text-amber-100">
-                  <Trophy size={18} className="shrink-0 opacity-90" />
-                  <span>
-                    รอบชิงชนะเลิศวันนี้ ({visibleChampionships.length}{" "}
-                    รายการ)
-                  </span>
-                </div>
-                <span className="text-xs font-medium text-amber-800/80 group-open:hidden dark:text-amber-200/80">
-                  แตะเพื่อดูรายละเอียด
-                </span>
-              </div>
-            </summary>
-            <ul className="mt-3 space-y-2 border-t border-amber-500/25 pt-3 dark:border-amber-400/20">
-              {visibleChampionships.map((row, idx) => (
-                <li
-                  key={`${row.sport}-${row.time}-${row.event}-${idx}`}
-                  className="flex flex-wrap items-center gap-2 rounded-xl border border-amber-500/20 bg-white/60 px-3 py-2 text-sm dark:border-amber-400/15 dark:bg-slate-900/40"
-                >
-                  <div className="font-medium text-slate-900 dark:text-slate-100">
-                    {row.sport}
-                  </div>
-                  <div className="mt-0.5 text-slate-700 dark:text-slate-300">
-                    {row.event}
-                  </div>
-                  <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-slate-500 dark:text-slate-400">
-                    <span>{row.round}</span>
-                    {row.time ? (
-                      <span className="font-mono tabular-nums">{row.time}</span>
-                    ) : null}
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </details>
-        </section>
-      )}
 
       {error && (
         <div className="mb-5 flex items-start gap-3 rounded-2xl border border-red-500/40 bg-red-500/10 p-4 text-sm text-red-700 dark:border-red-400/30 dark:text-red-200">

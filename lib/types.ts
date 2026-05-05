@@ -30,6 +30,21 @@ export interface ChampionshipSummaryRow {
   time: string;
 }
 
+export interface MedalRow {
+  rank: number;
+  province: string;
+  gold: number;
+  silver: number;
+  bronze: number;
+  total: number;
+}
+
+export interface MedalTable {
+  fetchedAt: string;
+  sourceUrl: string;
+  rows: MedalRow[];
+}
+
 export interface ScheduleStats {
   totalSports: number;
   totalMatches: number;
@@ -38,6 +53,8 @@ export interface ScheduleStats {
   pendingMatches: number;
   /** Matches whose round text indicates a championship final (medal round). */
   championshipMatchCount: number;
+  /** Championship matches whose status is FINISHED. */
+  finishedChampionshipMatchCount: number;
   /** One gold per championship match row in the schedule (display convention). */
   goldMedalEvents: number;
 }
