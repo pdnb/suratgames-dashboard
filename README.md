@@ -1,4 +1,4 @@
-# Surat Games 41 — Realtime Dashboard
+# SuratGames 41 — Realtime Dashboard
 
 Dashboard แบบเรียลไทม์ที่ดึงข้อมูล **ตารางการแข่งขันรายวัน** ของ "สุราษฎร์ธานีเกมส์ — กีฬาเยาวชนแห่งชาติครั้งที่ 41" จากเว็บไซต์ของการกีฬาแห่งประเทศไทย ([suratgames.sat.or.th](https://suratgames.sat.or.th/compettable2-dwt.asp?dateid=05/05/2569)) มาแสดงผลเป็นการ์ดต่อชนิดกีฬา พร้อมตัวกรองและรีเฟรชอัตโนมัติทุก 30 วินาที
 
