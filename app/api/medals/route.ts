@@ -10,7 +10,7 @@ interface CacheEntry {
   expiresAt: number;
 }
 
-const CACHE_TTL_MS = 30_000;
+const CACHE_TTL_MS = 60_000;
 const cache: CacheEntry | null = null;
 let currentCache: CacheEntry | null = cache;
 let inflight: Promise<MedalTable> | null = null;
