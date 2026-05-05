@@ -20,7 +20,7 @@ import SportSection from "./SportSection";
 import StatsHeader from "./StatsHeader";
 import TopMedalsWidget from "./TopMedalsWidget";
 
-const REFRESH_MS = 30_000;
+const REFRESH_MS = 60_000;
 
 interface Props {
   initialDate: string;
@@ -55,6 +55,15 @@ const medalFetcher = async (url: string): Promise<MedalTable> => {
   }
   return res.json();
 };
+
+export function HeroBadge() {
+  return (
+    <div className="inline-flex items-center gap-2 rounded-full border border-blue-900/10 bg-blue-900/5 px-3 py-1 text-xs text-blue-700 dark:border-white/10 dark:bg-white/5 dark:text-blue-300">
+      <Trophy size={12} />
+      สุราษฎร์ธานีเกมส์ <span className="opacity-60">•</span> กีฬาเยาวชนแห่งชาติครั้งที่ 41
+    </div>
+  );
+}
 
 export default function Dashboard({ initialDate }: Props) {
   const [date, setDate] = useState<string>(initialDate);
@@ -232,7 +241,7 @@ export default function Dashboard({ initialDate }: Props) {
       <header className="mb-6 space-y-4">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
           <div className="space-y-2">
-            {/* <HeroBadge stats={stats} /> */}
+            <HeroBadge />
             <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50 sm:text-3xl">
               ตารางการแข่งขัน
               <span className="ml-2 text-sky-700 dark:text-sky-300">
