@@ -37,7 +37,7 @@ export default function DatePickerBE({ value, onChange }: Props) {
   const longLabel = formatThaiLong(value);
 
   return (
-    <div className="inline-flex items-center gap-2 rounded-full border border-slate-900/10 bg-white/70 p-1 pr-2 dark:border-white/10 dark:bg-white/5">
+    <div className="inline-flex min-w-0 flex-1 items-center gap-1 rounded-full border border-slate-900/10 bg-white/70 p-1 pr-1.5 dark:border-white/10 dark:bg-white/5 sm:flex-none sm:gap-2 sm:pr-2">
       <button
         type="button"
         onClick={() => handleShift(-1)}
@@ -48,10 +48,12 @@ export default function DatePickerBE({ value, onChange }: Props) {
       </button>
       <label
         htmlFor={id}
-        className="inline-flex items-center gap-2 px-2 text-sm text-slate-900 dark:text-slate-100"
+        className="inline-flex min-w-0 items-center gap-1.5 px-1 text-[13px] text-slate-900 dark:text-slate-100 sm:gap-2 sm:px-2 sm:text-sm"
       >
         <Calendar size={14} className="opacity-70" />
-        <span className="font-medium">{longLabel}</span>
+        <span className="max-w-34 truncate font-medium sm:max-w-none">
+          {longLabel}
+        </span>
         <input
           id={id}
           type="date"
@@ -67,7 +69,7 @@ export default function DatePickerBE({ value, onChange }: Props) {
             el?.showPicker?.();
             el?.focus();
           }}
-          className="ml-1 rounded-md border border-slate-900/10 px-2 py-0.5 text-xs text-slate-600 hover:border-sky-500/40 hover:text-sky-700 dark:border-white/10 dark:text-slate-300 dark:hover:border-sky-400/40 dark:hover:text-sky-300"
+          className="ml-0.5 shrink-0 rounded-md border border-slate-900/10 px-1.5 py-0.5 text-xs text-slate-600 hover:border-sky-500/40 hover:text-sky-700 dark:border-white/10 dark:text-slate-300 dark:hover:border-sky-400/40 dark:hover:text-sky-300 sm:ml-1 sm:px-2"
         >
           เปลี่ยน
         </button>

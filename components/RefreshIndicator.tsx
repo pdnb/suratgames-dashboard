@@ -41,7 +41,8 @@ export default function RefreshIndicator({
   const fetchedLabel = fetchedMs ? formatTime(new Date(fetchedMs)) : "—";
 
   return (
-    <div className="flex items-center gap-3 rounded-full border border-slate-900/10 bg-white/70 px-3 py-1.5 text-xs text-slate-600 dark:border-white/10 dark:bg-white/5 dark:text-slate-300">
+    <div className="shrink-0 rounded-full border border-slate-900/10 bg-white/70 px-2.5 py-1 text-xs text-slate-600 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 sm:px-3 sm:py-1.5">
+      <div className="flex items-center gap-2 sm:gap-3">
       <span className="hidden items-center gap-1.5 sm:inline-flex">
         <span className="relative flex h-2 w-2">
           <span
@@ -73,16 +74,17 @@ export default function RefreshIndicator({
           {remaining}s
         </span>
       </span>
-      <button
-        type="button"
-        onClick={onRefresh}
-        className="inline-flex items-center gap-1 rounded-full border border-slate-900/10 bg-slate-900/5 px-2 py-1 text-xs hover:border-sky-500/40 hover:bg-sky-500/10 hover:text-sky-700 disabled:opacity-50 dark:border-white/10 dark:bg-white/5 dark:hover:border-sky-400/40 dark:hover:text-sky-300"
-        disabled={isValidating}
-        title="รีเฟรชทันที"
-      >
-        <RefreshCw size={12} className={isValidating ? "animate-spin" : ""} />
-        รีเฟรช
-      </button>
+        <button
+          type="button"
+          onClick={onRefresh}
+          className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-slate-900/10 bg-slate-900/5 px-2 py-1 text-xs hover:border-sky-500/40 hover:bg-sky-500/10 hover:text-sky-700 disabled:opacity-50 dark:border-white/10 dark:bg-white/5 dark:hover:border-sky-400/40 dark:hover:text-sky-300"
+          disabled={isValidating}
+          title="รีเฟรชทันที"
+        >
+          <RefreshCw size={12} className={isValidating ? "animate-spin" : ""} />
+          รีเฟรช
+        </button>
+      </div>
     </div>
   );
 }

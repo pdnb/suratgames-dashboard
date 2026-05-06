@@ -19,7 +19,7 @@ const STATUS_ORDER: Record<Match["status"], number> = {
 };
 
 export default function SportSection({ sport, matches, layout }: Props) {
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(true);
 
   const sorted = [...matches].sort((a, b) => {
     const s = STATUS_ORDER[a.status] - STATUS_ORDER[b.status];

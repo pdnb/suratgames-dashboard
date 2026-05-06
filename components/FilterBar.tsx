@@ -69,29 +69,31 @@ export default function FilterBar({
   onSearchChange,
 }: Props) {
   return (
-    <div className="space-y-3 rounded-2xl border border-slate-900/10 bg-[var(--color-bg-soft)]/70 p-4 backdrop-blur-sm dark:border-white/10">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-wrap items-center gap-2">
+    <div className="space-y-3 rounded-2xl border border-slate-900/10 bg-bg-soft/70 p-4 backdrop-blur-sm dark:border-white/10">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="space-y-2 sm:min-w-0 sm:flex-1">
           <span className="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-500">
             สถานะ
           </span>
-          {STATUS_OPTIONS.map((opt) => {
-            const active = statusFilter === opt.id;
-            return (
-              <button
-                key={opt.id}
-                type="button"
-                data-active={active}
-                onClick={() => onStatusChange(opt.id)}
-                className={`rounded-full border border-slate-900/10 bg-slate-900/5 px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:border-slate-900/20 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:border-white/20 ${opt.cls}`}
-              >
-                {opt.label}
-              </button>
-            );
-          })}
+          <div className="scrollbar-thin-x flex gap-2 overflow-x-auto pb-1">
+            {STATUS_OPTIONS.map((opt) => {
+              const active = statusFilter === opt.id;
+              return (
+                <button
+                  key={opt.id}
+                  type="button"
+                  data-active={active}
+                  onClick={() => onStatusChange(opt.id)}
+                  className={`shrink-0 rounded-full border border-slate-900/10 bg-slate-900/5 px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:border-slate-900/20 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:border-white/20 ${opt.cls}`}
+                >
+                  {opt.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
-        <div className="relative">
+        {/* <div className="relative">
           <Search
             size={14}
             className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500"
@@ -113,75 +115,79 @@ export default function FilterBar({
               <X size={12} />
             </button>
           )}
-        </div>
+        </div> */}
       </div>
 
       {sports.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="space-y-2">
           <span className="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-500">
             ชนิดกีฬา
           </span>
-          <button
-            type="button"
-            onClick={onClearSports}
-            data-active={selectedSports.size === 0}
-            className="rounded-full border border-slate-900/10 bg-slate-900/5 px-2.5 py-1 text-xs text-slate-600 transition hover:border-slate-900/20 data-[active=true]:border-sky-500/60 data-[active=true]:bg-sky-500/15 data-[active=true]:text-sky-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:border-white/20 dark:data-[active=true]:border-sky-400/50 dark:data-[active=true]:text-sky-200"
-          >
-            ทั้งหมด
-          </button>
-          {sports.map((s) => {
-            const active = selectedSports.has(s.name);
-            return (
-              <button
-                key={s.name}
-                type="button"
-                onClick={() => onToggleSport(s.name)}
-                data-active={active}
-                className="inline-flex items-center gap-1.5 rounded-full border border-slate-900/10 bg-slate-900/5 px-2.5 py-1 text-xs text-slate-600 transition hover:border-slate-900/20 data-[active=true]:border-sky-500/60 data-[active=true]:bg-sky-500/15 data-[active=true]:text-sky-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:border-white/20 dark:data-[active=true]:border-sky-400/50 dark:data-[active=true]:text-sky-200"
-              >
-                {s.liveCount > 0 && (
-                  <span className="inline-flex h-1.5 w-1.5 rounded-full bg-red-500 live-pulse dark:bg-red-400" />
-                )}
-                {s.name}
-                <span className="text-[10px] tabular-nums opacity-60">
-                  {s.total}
-                </span>
-              </button>
-            );
-          })}
+          <div className="scrollbar-thin-x flex gap-2 overflow-x-auto pb-1">
+            <button
+              type="button"
+              onClick={onClearSports}
+              data-active={selectedSports.size === 0}
+              className="shrink-0 rounded-full border border-slate-900/10 bg-slate-900/5 px-2.5 py-1 text-xs text-slate-600 transition hover:border-slate-900/20 data-[active=true]:border-sky-500/60 data-[active=true]:bg-sky-500/15 data-[active=true]:text-sky-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:border-white/20 dark:data-[active=true]:border-sky-400/50 dark:data-[active=true]:text-sky-200"
+            >
+              ทั้งหมด
+            </button>
+            {sports.map((s) => {
+              const active = selectedSports.has(s.name);
+              return (
+                <button
+                  key={s.name}
+                  type="button"
+                  onClick={() => onToggleSport(s.name)}
+                  data-active={active}
+                  className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-slate-900/10 bg-slate-900/5 px-2.5 py-1 text-xs text-slate-600 transition hover:border-slate-900/20 data-[active=true]:border-sky-500/60 data-[active=true]:bg-sky-500/15 data-[active=true]:text-sky-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:border-white/20 dark:data-[active=true]:border-sky-400/50 dark:data-[active=true]:text-sky-200"
+                >
+                  {s.liveCount > 0 && (
+                    <span className="inline-flex h-1.5 w-1.5 rounded-full bg-red-500 live-pulse dark:bg-red-400" />
+                  )}
+                  {s.name}
+                  <span className="text-[10px] tabular-nums opacity-60">
+                    {s.total}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
       )}
 
       {rounds.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="space-y-2">
           <span className="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-500">
             รอบ
           </span>
-          <button
-            type="button"
-            onClick={onClearRounds}
-            data-active={selectedRounds.size === 0}
-            className="rounded-full border border-slate-900/10 bg-slate-900/5 px-2.5 py-1 text-xs text-slate-600 transition hover:border-slate-900/20 data-[active=true]:border-sky-500/60 data-[active=true]:bg-sky-500/15 data-[active=true]:text-sky-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:border-white/20 dark:data-[active=true]:border-sky-400/50 dark:data-[active=true]:text-sky-200"
-          >
-            ทั้งหมด
-          </button>
-          {rounds.map((r) => {
-            const active = selectedRounds.has(r.name);
-            return (
-              <button
-                key={r.name}
-                type="button"
-                onClick={() => onToggleRound(r.name)}
-                data-active={active}
-                className="inline-flex items-center gap-1.5 rounded-full border border-slate-900/10 bg-slate-900/5 px-2.5 py-1 text-xs text-slate-600 transition hover:border-slate-900/20 data-[active=true]:border-sky-500/60 data-[active=true]:bg-sky-500/15 data-[active=true]:text-sky-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:border-white/20 dark:data-[active=true]:border-sky-400/50 dark:data-[active=true]:text-sky-200"
-              >
-                {r.name}
-                <span className="text-[10px] tabular-nums opacity-60">
-                  {r.total}
-                </span>
-              </button>
-            );
-          })}
+          <div className="scrollbar-thin-x flex gap-2 overflow-x-auto pb-1">
+            <button
+              type="button"
+              onClick={onClearRounds}
+              data-active={selectedRounds.size === 0}
+              className="shrink-0 rounded-full border border-slate-900/10 bg-slate-900/5 px-2.5 py-1 text-xs text-slate-600 transition hover:border-slate-900/20 data-[active=true]:border-sky-500/60 data-[active=true]:bg-sky-500/15 data-[active=true]:text-sky-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:border-white/20 dark:data-[active=true]:border-sky-400/50 dark:data-[active=true]:text-sky-200"
+            >
+              ทั้งหมด
+            </button>
+            {rounds.map((r) => {
+              const active = selectedRounds.has(r.name);
+              return (
+                <button
+                  key={r.name}
+                  type="button"
+                  onClick={() => onToggleRound(r.name)}
+                  data-active={active}
+                  className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-slate-900/10 bg-slate-900/5 px-2.5 py-1 text-xs text-slate-600 transition hover:border-slate-900/20 data-[active=true]:border-sky-500/60 data-[active=true]:bg-sky-500/15 data-[active=true]:text-sky-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:border-white/20 dark:data-[active=true]:border-sky-400/50 dark:data-[active=true]:text-sky-200"
+                >
+                  {r.name}
+                  <span className="text-[10px] tabular-nums opacity-60">
+                    {r.total}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
       )}
     </div>

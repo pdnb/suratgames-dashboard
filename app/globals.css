@@ -103,3 +103,25 @@ a {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--scrollbar-thumb-hover);
 }
+
+.scrollbar-thin-x {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) transparent;
+}
+
+.scrollbar-thin-x::-webkit-scrollbar {
+  height: 6px;
+}
+
+.scrollbar-thin-x::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-thin-x::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 9999px;
+}
+
+.scrollbar-thin-x::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}

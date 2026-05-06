@@ -8,6 +8,11 @@ import type {
   Match,
   MatchStatus,
   Schedule,
+  ScheduleFinal,
+  ScheduleFinalSportRow,
+  ScheduleGrid,
+  ScheduleGridCell,
+  ScheduleGridSportRow,
   ScheduleStats,
   Sport,
 } from "./types";
@@ -15,6 +20,8 @@ import { dateBEToISO, parseDateBE } from "./date";
 
 const BASE_URL = "https://suratgames.sat.or.th/";
 const MEDAL_URL = `${BASE_URL}total_medal-dwt.asp`;
+const SCHEDULE_FINAL_URL = `${BASE_URL}schedule_final-dwt.asp`;
+const SCHEDULE_GRID_URL = `${BASE_URL}Schedule-dwt.asp`;
 
 const HEADER_LABELS = [
   "รายการ",
@@ -311,7 +318,7 @@ export async function fetchMedalTable(limit = 10): Promise<MedalTable> {
 
   rows.sort((a, b) => {
     // if (a.total !== b.total) return b.total - a.total;
-    if (a.gold !== b.gold) return b.gold - a.gold;
+    // if (a.gold !== b.gold) return b.gold - a.gold;
     // if (a.silver !== b.silver) return b.silver - a.silver;
     // if (a.bronze !== b.bronze) return b.bronze - a.bronze;
     return a.rank - b.rank;
@@ -321,5 +328,244 @@ export async function fetchMedalTable(limit = 10): Promise<MedalTable> {
     fetchedAt: new Date().toISOString(),
     sourceUrl: MEDAL_URL,
     rows: rows.slice(0, Math.max(1, limit)),
+  };
+}
+
+/**
+ * Matrix of gold-medal / final events per sport per day from schedule_final-dwt.asp.
+ */
+export async function fetchScheduleFinal(): Promise<ScheduleFinal> {
+  const res = await fetch(SCHEDULE_FINAL_URL, {
+    cache: "no-store",
+    headers: {
+      "User-Agent":
+        "Mozilla/5.0 (compatible; SuratGamesDashboard/1.0; +https://suratgames.sat.or.th)",
+      Accept: "text/html,application/xhtml+xml",
+    },
+  });
+
+  if (!res.ok) {
+    throw new Error(`เซิร์ฟเวอร์ต้นทางตอบกลับ ${res.status} ${res.statusText}`);
+  }
+
+  const buf = Buffer.from(await res.arrayBuffer());
+  const html = iconv.decode(buf, "windows-874");
+  const $ = cheerio.load(html);
+
+  let dates: string[] = [];
+  $("tr.report_title_table").each((_, tr) => {
+    const $tr = $(tr);
+    const found: string[] = [];
+    $tr
+      .find('a[href*="compettable_final-dwt.asp"]')
+      .each((_, a) => {
+        const href = $(a).attr("href");
+        const id = pickQueryParam(absUrl(href), "dateid");
+        if (id && parseDateBE(id)) found.push(id);
+      });
+    if (found.length > dates.length) dates = found;
+  });
+
+  const sports: ScheduleFinalSportRow[] = [];
+  $("tr").each((_, tr) => {
+    const $tr = $(tr);
+    const $sportLink = $tr
+      .find('td:first a.normal[href*="compettable3_final"]')
+      .first();
+    if (!$sportLink.length) return;
+
+    const name = clean($sportLink.text());
+    if (!name) return;
+
+    const cells = $tr.children("td").toArray();
+    if (cells.length < 3) return;
+
+    const $last = $(cells[cells.length - 1]);
+    const $bold = $last.find("b").first();
+    if (!$bold.length) return;
+
+    const total = parseMedalNumber($bold.text());
+    const perDay = cells
+      .slice(1, -1)
+      .map((c) => parseMedalNumber($(c).text()));
+
+    sports.push({ name, total, perDay });
+  });
+
+  let totalMedals = 0;
+  $("tr.report_title_table").each((_, tr) => {
+    const $tr = $(tr);
+    if ($tr.find('a[href*="compettable_final-dwt.asp"]').length) return;
+
+    const firstText = clean($tr.find("td:first").text());
+    if (firstText !== "รวม") return;
+
+    const cells = $tr.children("td").toArray();
+    if (cells.length < 2) return;
+    const lastNum = parseMedalNumber($(cells[cells.length - 1]).text());
+    if (lastNum > totalMedals) totalMedals = lastNum;
+  });
+
+  return {
+    fetchedAt: new Date().toISOString(),
+    sourceUrl: SCHEDULE_FINAL_URL,
+    dates,
+    sports,
+    totalSports: sports.length,
+    totalMedals,
+  };
+}
+
+function parseScheduleGridCell($cell: cheerio.Cheerio<any>): ScheduleGridCell {
+  const fSpans = $cell.find("span.text12white");
+  let hasF = false;
+  for (let i = 0; i < fSpans.length; i++) {
+    if (clean(fSpans.eq(i).text()).toUpperCase() === "F") {
+      hasF = true;
+      break;
+    }
+  }
+  if (hasF) {
+    return { kind: "final", finalCount: 1 };
+  }
+
+  if ($cell.find("img").length > 0) {
+    return { kind: "compete", finalCount: 0 };
+  }
+
+  const t = clean($cell.text()).toUpperCase();
+  if (t === "XX" || t === "") {
+    return { kind: "none", finalCount: 0 };
+  }
+
+  if ($cell.find('a[href*="dateid="]').length > 0) {
+    return { kind: "compete", finalCount: 0 };
+  }
+
+  return { kind: "none", finalCount: 0 };
+}
+
+function extractScheduleGridDates($: cheerio.CheerioAPI): string[] {
+  const candidates: string[][] = [];
+  $("tr.btn-warning").each((_, tr) => {
+    const found: string[] = [];
+    $(tr)
+      .find('a[href*="compettable2-dwt.asp"]')
+      .each((_, a) => {
+        const href = $(a).attr("href");
+        const url = absUrl(href);
+        const dateid = pickQueryParam(url, "dateid");
+        const clickid = pickQueryParam(url, "clickid");
+        if (dateid && parseDateBE(dateid) && clickid === null) {
+          found.push(dateid);
+        }
+      });
+    if (found.length >= 10) {
+      candidates.push(found);
+    }
+  });
+  return candidates[0] ?? [];
+}
+
+/**
+ * Sport × date matrix from Schedule-dwt.asp (competition days vs gold-medal "F" days).
+ */
+export async function fetchScheduleGrid(): Promise<ScheduleGrid> {
+  const res = await fetch(SCHEDULE_GRID_URL, {
+    cache: "no-store",
+    headers: {
+      "User-Agent":
+        "Mozilla/5.0 (compatible; SuratGamesDashboard/1.0; +https://suratgames.sat.or.th)",
+      Accept: "text/html,application/xhtml+xml",
+    },
+  });
+
+  if (!res.ok) {
+    throw new Error(`เซิร์ฟเวอร์ต้นทางตอบกลับ ${res.status} ${res.statusText}`);
+  }
+
+  const buf = Buffer.from(await res.arrayBuffer());
+  const html = iconv.decode(buf, "windows-874");
+  const $ = cheerio.load(html);
+
+  const dates = extractScheduleGridDates($);
+  if (dates.length === 0) {
+    throw new Error("ไม่พบแถววันที่ในตาราง (Schedule-dwt.asp)");
+  }
+
+  const sports: ScheduleGridSportRow[] = [];
+
+  $("table.report_title_table tr").each((_, tr) => {
+    const $tr = $(tr);
+    const $sportAnchors = $tr.find(
+      'td:first a[href*="compettable2-dwt.asp?clickid="]'
+    );
+    if (!$sportAnchors.length) return;
+
+    let sportName = "";
+    $sportAnchors.each((_, el) => {
+      const t = clean($(el).text());
+      if (t) sportName = t;
+    });
+    if (!sportName) return;
+
+    const firstSportHref = $sportAnchors.first().attr("href");
+    const sportId = pickQueryParam(absUrl(firstSportHref), "clickid");
+
+    const $cells = $tr.children("td");
+    const slice = $cells.slice(1, 1 + dates.length);
+
+    const cells: ScheduleGridCell[] = [];
+    for (let i = 0; i < dates.length; i++) {
+      const $cell = slice.eq(i);
+      if (!$cell.length) {
+        cells.push({ kind: "none", finalCount: 0 });
+        continue;
+      }
+      cells.push(parseScheduleGridCell($cell));
+    }
+
+    const competeDays = cells.filter((c) => c.kind === "compete").length;
+    const finalDays = cells.filter((c) => c.kind === "final").length;
+
+    sports.push({
+      name: sportName,
+      sportId,
+      cells,
+      competeDays,
+      finalDays,
+    });
+  });
+
+  const n = dates.length;
+  const perDayCompete = Array.from({ length: n }, () => 0);
+  const perDayFinal = Array.from({ length: n }, () => 0);
+  let totalCompeteCells = 0;
+  let totalFinalCells = 0;
+
+  for (const s of sports) {
+    s.cells.forEach((cell, i) => {
+      if (cell.kind === "compete") {
+        totalCompeteCells++;
+        perDayCompete[i]++;
+      } else if (cell.kind === "final") {
+        totalFinalCells++;
+        perDayFinal[i]++;
+      }
+    });
+  }
+
+  return {
+    fetchedAt: new Date().toISOString(),
+    sourceUrl: SCHEDULE_GRID_URL,
+    dates,
+    sports,
+    totals: {
+      totalSports: sports.length,
+      totalCompeteCells,
+      totalFinalCells,
+      perDayCompete,
+      perDayFinal,
+    },
   };
 }

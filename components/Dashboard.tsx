@@ -19,6 +19,7 @@ import RefreshIndicator from "./RefreshIndicator";
 import SportSection from "./SportSection";
 import StatsHeader from "./StatsHeader";
 import TopMedalsWidget from "./TopMedalsWidget";
+import SiteNav from "./SiteNav";
 
 const REFRESH_MS = 60_000;
 
@@ -266,7 +267,7 @@ export default function Dashboard({ initialDate }: Props) {
             )} */}
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex w-full flex-nowrap items-center gap-2 sm:w-auto sm:gap-3">
             <DatePickerBE value={date} onChange={setDate} />
             <RefreshIndicator
               fetchedAt={data?.fetchedAt ?? null}
@@ -284,13 +285,12 @@ export default function Dashboard({ initialDate }: Props) {
             isLoading={isLoadingMedals}
             error={(medalError as Error) ?? null}
             onRetry={() => mutateMedals()}
-            title="Top 5 เหรียญทอง"
+            title="5 อันดับเหรีญรางวัล"
             maxRows={5}
             className="h-full min-h-0 lg:min-h-0"
           />
         </div>
       </header>
-
 
       {data && visibleChampionships.length > 0 && (
         <ChampionshipSection rows={visibleChampionships} />
