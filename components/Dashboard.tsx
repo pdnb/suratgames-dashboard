@@ -285,7 +285,7 @@ export default function Dashboard({ initialDate }: Props) {
             isLoading={isLoadingMedals}
             error={(medalError as Error) ?? null}
             onRetry={() => mutateMedals()}
-            title="5 อันดับเหรีญรางวัล"
+            title="5 อันดับเหรียญรางวัล"
             maxRows={5}
             className="h-full min-h-0 lg:min-h-0"
           />
