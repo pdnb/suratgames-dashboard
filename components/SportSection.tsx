@@ -48,7 +48,7 @@ export default function SportSection({ sport, matches, layout }: Props) {
           {live > 0 && (
             <span className="inline-flex items-center gap-1 rounded-full bg-red-500/20 px-2 py-0.5 text-xs font-medium text-red-700 live-pulse dark:text-red-300">
               <Radio size={12} />
-              LIVE {live}
+              Running {live}
             </span>
           )}
           <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
