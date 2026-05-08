@@ -11,7 +11,7 @@ interface CacheEntry {
   expiresAt: number;
 }
 
-const CACHE_TTL_MS = 60_000;
+const CACHE_TTL_MS = 300_000;
 const cache = new Map<string, CacheEntry>();
 const inflight = new Map<string, Promise<Schedule>>();
 
@@ -54,7 +54,7 @@ export async function GET(request: Request) {
     const data = await getSchedule(dateParam);
     return NextResponse.json(data, {
       headers: {
-        "Cache-Control": "public, s-maxage=60, stale-while-revalidate=60",
+        "Cache-Control": "public, s-maxage=300, stale-while-revalidate=60",
       },
     });
   } catch (err) {

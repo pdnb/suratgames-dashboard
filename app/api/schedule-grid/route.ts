@@ -10,7 +10,7 @@ interface CacheEntry {
   expiresAt: number;
 }
 
-const CACHE_TTL_MS = 60_000;
+const CACHE_TTL_MS = 300_000;
 let currentCache: CacheEntry | null = null;
 let inflight: Promise<ScheduleGrid> | null = null;
 
@@ -36,7 +36,7 @@ export async function GET() {
     const data = await getScheduleGrid();
     return NextResponse.json(data, {
       headers: {
-        "Cache-Control": "public, s-maxage=30, stale-while-revalidate=60",
+        "Cache-Control": "public, s-maxage=300, stale-while-revalidate=60",
       },
     });
   } catch (err) {
