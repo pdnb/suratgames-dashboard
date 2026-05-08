@@ -21,7 +21,7 @@ import StatsHeader from "./StatsHeader";
 import TopMedalsWidget from "./TopMedalsWidget";
 import SiteNav from "./SiteNav";
 
-const REFRESH_MS = 60_000;
+const REFRESH_MS = 300_000;
 
 interface Props {
   initialDate: string;
