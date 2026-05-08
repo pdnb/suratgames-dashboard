@@ -269,7 +269,7 @@ export async function fetchSchedule(dateBE: string): Promise<Schedule> {
   };
 }
 
-export async function fetchMedalTable(limit = 10): Promise<MedalTable> {
+export async function fetchMedalTable(limit?: number): Promise<MedalTable> {
   const res = await fetch(MEDAL_URL, {
     cache: "no-store",
     headers: {
@@ -327,7 +327,8 @@ export async function fetchMedalTable(limit = 10): Promise<MedalTable> {
   return {
     fetchedAt: new Date().toISOString(),
     sourceUrl: MEDAL_URL,
-    rows: rows.slice(0, Math.max(1, limit)),
+    rows:
+      typeof limit === "number" ? rows.slice(0, Math.max(1, limit)) : rows,
   };
 }
 

@@ -20,7 +20,7 @@ async function getMedals(): Promise<MedalTable> {
   if (currentCache && currentCache.expiresAt > now) return currentCache.data;
   if (inflight) return inflight;
 
-  inflight = fetchMedalTable(10)
+  inflight = fetchMedalTable()
     .then((data) => {
       currentCache = { data, expiresAt: Date.now() + CACHE_TTL_MS };
       return data;

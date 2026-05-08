@@ -23,6 +23,15 @@ export default function TopMedalsWidget({
   className,
 }: Props) {
   const rows = data?.rows?.slice(0, maxRows) ?? [];
+  const medalTotals = (data?.rows ?? []).reduce(
+    (sum, row) => ({
+      gold: sum.gold + row.gold,
+      silver: sum.silver + row.silver,
+      bronze: sum.bronze + row.bronze,
+      total: sum.total + row.total,
+    }),
+    { gold: 0, silver: 0, bronze: 0, total: 0 },
+  );
 
   return (
     <section
@@ -114,6 +123,30 @@ export default function TopMedalsWidget({
             </li>
           ))}
         </ul>
+      )}
+
+      {!error && data && data.rows.length > 0 && (
+        <div className="mt-3 flex shrink-0 items-center justify-between gap-2 rounded-xl border border-slate-900/10 bg-slate-900/5 px-3 py-2 text-xs dark:border-white/10 dark:bg-white/5">
+          <span className="text-slate-600 dark:text-slate-300 font-bold">รวม</span>
+          <span className="flex items-center gap-1.5 font-mono text-xs text-slate-600 dark:text-slate-300">
+            <span className="inline-flex items-center gap-0.5 text-amber-500">
+              <Medal size={12} />
+              {medalTotals.gold}
+            </span>
+            <span className="inline-flex items-center gap-0.5 text-slate-500 dark:text-slate-400">
+              <Medal size={12} />
+              {medalTotals.silver}
+            </span>
+            <span className="inline-flex items-center gap-0.5 text-orange-500">
+              <Medal size={12} />
+              {medalTotals.bronze}
+            </span>
+            <span className="mx-0.5">|</span>
+            <span className="text-sm font-semibold text-emerald-700 dark:text-slate-100">
+              {medalTotals.total}
+            </span>
+          </span>
+        </div>
       )}
 
       {/* <div className="mt-3 flex shrink-0 items-center gap-1 text-[11px] text-slate-500 dark:text-slate-400">
