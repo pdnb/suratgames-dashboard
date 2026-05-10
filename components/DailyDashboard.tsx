@@ -2,6 +2,10 @@
 
 import type { Match, MatchStatus, MedalTable, Schedule } from "@/lib/types";
 import {
+  FAVORITE_SPORTS_STORAGE_KEY,
+  parseFavoriteSports,
+} from "@/lib/favorite-sports";
+import {
   MATCH_LAYOUT_STORAGE_KEY,
   parseMatchLayout,
   type MatchLayoutMode,
@@ -73,7 +77,9 @@ export default function DailyDashboard({ initialDate }: Props) {
   const [selectedRounds, setSelectedRounds] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState("");
   const [matchLayout, setMatchLayout] = useState<MatchLayoutMode>("grid");
+  const [favoriteSports, setFavoriteSports] = useState<Set<string>>(() => new Set());
   const skipLayoutPersistOnce = useRef(true);
+  const skipFavoritePersistOnce = useRef(true);
 
   useEffect(() => {
     const stored = parseMatchLayout(
@@ -92,6 +98,29 @@ export default function DailyDashboard({ initialDate }: Props) {
     }
     localStorage.setItem(MATCH_LAYOUT_STORAGE_KEY, matchLayout);
   }, [matchLayout]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    setFavoriteSports(
+      new Set(
+        parseFavoriteSports(
+          localStorage.getItem(FAVORITE_SPORTS_STORAGE_KEY)
+        )
+      )
+    );
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (skipFavoritePersistOnce.current) {
+      skipFavoritePersistOnce.current = false;
+      return;
+    }
+    localStorage.setItem(
+      FAVORITE_SPORTS_STORAGE_KEY,
+      JSON.stringify([...favoriteSports])
+    );
+  }, [favoriteSports]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -135,6 +164,15 @@ export default function DailyDashboard({ initialDate }: Props) {
   }, []);
 
   const handleClearSports = useCallback(() => setSelectedSports(new Set()), []);
+
+  const handleToggleFavorite = useCallback((name: string) => {
+    setFavoriteSports((prev) => {
+      const next = new Set(prev);
+      if (next.has(name)) next.delete(name);
+      else next.add(name);
+      return next;
+    });
+  }, []);
 
   const handleToggleRound = useCallback((name: string) => {
     setSelectedRounds((prev) => {
@@ -199,12 +237,15 @@ export default function DailyDashboard({ initialDate }: Props) {
         matches: s.matches.filter(matchPasses),
       }))
       .sort((a, b) => {
+        const aFav = favoriteSports.has(a.sport.name) ? 1 : 0;
+        const bFav = favoriteSports.has(b.sport.name) ? 1 : 0;
+        if (aFav !== bFav) return bFav - aFav;
         const aLive = a.matches.some((m) => m.status === "LIVE") ? 1 : 0;
         const bLive = b.matches.some((m) => m.status === "LIVE") ? 1 : 0;
         if (aLive !== bLive) return bLive - aLive;
         return b.matches.length - a.matches.length;
       });
-  }, [data, selectedSports, matchPasses]);
+  }, [data, selectedSports, matchPasses, favoriteSports]);
 
   const visibleMatchCount = filteredSections.reduce(
     (n, s) => n + s.matches.length,
@@ -233,6 +274,17 @@ export default function DailyDashboard({ initialDate }: Props) {
     total: s.total,
     liveCount: s.liveCount,
   }));
+
+  const sportsForFilterOrdered = useMemo(() => {
+    const list = [...sportsForFilter];
+    list.sort((a, b) => {
+      const fa = favoriteSports.has(a.name) ? 1 : 0;
+      const fb = favoriteSports.has(b.name) ? 1 : 0;
+      if (fa !== fb) return fb - fa;
+      return 0;
+    });
+    return list;
+  }, [sportsForFilter, favoriteSports]);
 
   const dateLabel = formatThaiLong(date);
   const isToday = date === todayBE();
@@ -298,7 +350,9 @@ export default function DailyDashboard({ initialDate }: Props) {
 
       <div className="mb-5">
         <FilterBar
-          sports={sportsForFilter}
+          sports={sportsForFilterOrdered}
+          favoriteSports={favoriteSports}
+          onToggleFavorite={handleToggleFavorite}
           selectedSports={selectedSports}
           onToggleSport={handleToggleSport}
           onClearSports={handleClearSports}
@@ -373,6 +427,8 @@ export default function DailyDashboard({ initialDate }: Props) {
                 sport={sport}
                 matches={matches}
                 layout={matchLayout}
+                isFavorite={favoriteSports.has(sport.name)}
+                onToggleFavorite={() => handleToggleFavorite(sport.name)}
               />
             ))}
           </div>

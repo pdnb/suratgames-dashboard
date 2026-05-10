@@ -1,7 +1,7 @@
 "use client";
 
 import type { MatchStatus } from "@/lib/types";
-import { Search, X } from "lucide-react";
+import { Star } from "lucide-react";
 
 export type StatusFilter = "ALL" | MatchStatus;
 
@@ -18,6 +18,8 @@ interface RoundOption {
 
 interface Props {
   sports: SportOption[];
+  favoriteSports: Set<string>;
+  onToggleFavorite: (name: string) => void;
   selectedSports: Set<string>;
   onToggleSport: (name: string) => void;
   onClearSports: () => void;
@@ -56,6 +58,8 @@ const STATUS_OPTIONS: { id: StatusFilter; label: string; cls: string }[] = [
 
 export default function FilterBar({
   sports,
+  favoriteSports,
+  onToggleFavorite,
   selectedSports,
   onToggleSport,
   onClearSports,
@@ -134,22 +138,53 @@ export default function FilterBar({
             </button>
             {sports.map((s) => {
               const active = selectedSports.has(s.name);
+              const fav = favoriteSports.has(s.name);
               return (
-                <button
+                <div
                   key={s.name}
-                  type="button"
-                  onClick={() => onToggleSport(s.name)}
-                  data-active={active}
-                  className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-slate-900/10 bg-slate-900/5 px-2.5 py-1 text-xs text-slate-600 transition hover:border-slate-900/20 data-[active=true]:border-sky-500/60 data-[active=true]:bg-sky-500/15 data-[active=true]:text-sky-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:border-white/20 dark:data-[active=true]:border-sky-400/50 dark:data-[active=true]:text-sky-200"
+                  role="presentation"
+                  className="inline-flex shrink-0 items-stretch overflow-hidden rounded-full border border-slate-900/10 bg-slate-900/5 dark:border-white/10 dark:bg-white/5"
                 >
-                  {s.liveCount > 0 && (
-                    <span className="inline-flex h-1.5 w-1.5 rounded-full bg-red-500 live-pulse dark:bg-red-400" />
-                  )}
-                  {s.name}
-                  <span className="text-[10px] tabular-nums opacity-60">
-                    {s.total}
-                  </span>
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => onToggleSport(s.name)}
+                    data-active={active}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs text-slate-600 transition hover:bg-slate-900/10 data-[active=true]:bg-sky-500/15 data-[active=true]:text-sky-700 dark:text-slate-300 dark:hover:bg-white/10 dark:data-[active=true]:bg-sky-500/15 dark:data-[active=true]:text-sky-200"
+                  >
+                    {s.liveCount > 0 && (
+                      <span className="inline-flex h-1.5 w-1.5 rounded-full bg-red-500 live-pulse dark:bg-red-400" />
+                    )}
+                    {s.name}
+                    <span className="text-[10px] tabular-nums opacity-60">
+                      {s.total}
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    aria-label={fav ? `เลิกชอบ ${s.name}` : `ถูกใจ ${s.name}`}
+                    aria-pressed={fav}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onToggleFavorite(s.name);
+                    }}
+                    className={`flex items-center px-2 py-1 text-slate-500 transition hover:bg-amber-500/15 hover:text-amber-700 dark:text-slate-400 dark:hover:text-amber-300 ${
+                      fav
+                        ? "bg-amber-500/15 text-amber-600 dark:bg-amber-500/15 dark:text-amber-400"
+                        : ""
+                    }`}
+                  >
+                    <Star
+                      size={14}
+                      strokeWidth={fav ? 0 : 2}
+                      className={
+                        fav
+                          ? "fill-amber-500 text-amber-500 dark:fill-amber-400 dark:text-amber-400"
+                          : ""
+                      }
+                      aria-hidden
+                    />
+                  </button>
+                </div>
               );
             })}
           </div>

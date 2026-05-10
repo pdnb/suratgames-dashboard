@@ -13,7 +13,7 @@ interface ChampionshipGroup {
 }
 
 export default function ChampionshipSection({ rows }: Props) {
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(true);
 
   const groupedRows = useMemo<ChampionshipGroup[]>(() => {
     const bySport = new Map<string, ChampionshipSummaryRow[]>();
