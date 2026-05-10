@@ -1,5 +1,6 @@
-import Dashboard from "@/components/Dashboard";
-import { todayBE, parseDateBE } from "@/lib/date";
+import SummaryDashboard from "@/components/SummaryDashboard";
+import { parseDateBE } from "@/lib/date";
+import { redirect } from "next/navigation";
 
 interface PageProps {
   searchParams: Promise<{ date?: string }>;
@@ -8,7 +9,8 @@ interface PageProps {
 export default async function HomePage({ searchParams }: PageProps) {
   const params = await searchParams;
   const requested = params?.date;
-  const initialDate =
-    requested && parseDateBE(requested) ? requested : todayBE();
-  return <Dashboard initialDate={initialDate} />;
+  if (requested && parseDateBE(requested)) {
+    redirect(`/daily?date=${encodeURIComponent(requested)}`);
+  }
+  return <SummaryDashboard />;
 }

@@ -2,11 +2,16 @@ import * as cheerio from "cheerio";
 import iconv from "iconv-lite";
 import { isChampionshipRound } from "./championship-round";
 import type {
+  AllOverview,
   ChampionshipSummaryRow,
   MedalRow,
   MedalTable,
   Match,
   MatchStatus,
+  OverviewDailyRow,
+  OverviewLiveMatch,
+  OverviewSportRow,
+  OverviewTodayFinal,
   Schedule,
   ScheduleFinal,
   ScheduleFinalSportRow,
@@ -16,12 +21,13 @@ import type {
   ScheduleStats,
   Sport,
 } from "./types";
-import { dateBEToISO, parseDateBE } from "./date";
+import { dateBEToISO, formatDateBE, parseDateBE, todayBE } from "./date";
 
 const BASE_URL = "https://suratgames.sat.or.th/";
 const MEDAL_URL = `${BASE_URL}total_medal-dwt.asp`;
 const SCHEDULE_FINAL_URL = `${BASE_URL}schedule_final-dwt.asp`;
 const SCHEDULE_GRID_URL = `${BASE_URL}Schedule-dwt.asp`;
+const ALL_DAY_BY_DAY_URL = `${BASE_URL}All_Print_DaybyDay.asp?clickid=`;
 
 const HEADER_LABELS = [
   "รายการ",
@@ -568,5 +574,288 @@ export async function fetchScheduleGrid(): Promise<ScheduleGrid> {
       perDayCompete,
       perDayFinal,
     },
+  };
+}
+
+const THAI_MONTH_TO_NUM: Record<string, number> = {
+  มกราคม: 1,
+  กุมภาพันธ์: 2,
+  มีนาคม: 3,
+  เมษายน: 4,
+  พฤษภาคม: 5,
+  มิถุนายน: 6,
+  กรกฎาคม: 7,
+  สิงหาคม: 8,
+  กันยายน: 9,
+  ตุลาคม: 10,
+  พฤศจิกายน: 11,
+  ธันวาคม: 12,
+};
+
+const DAY_HEADER_REGEX =
+  /^ประจำวันที่\s+(\d{1,2})\s+(\S+)\s+(\d{4})$/u;
+
+function parseThaiDayHeader(text: string): string | null {
+  const m = DAY_HEADER_REGEX.exec(text.trim());
+  if (!m) return null;
+  const day = Number.parseInt(m[1], 10);
+  const month = THAI_MONTH_TO_NUM[m[2]];
+  const year = Number.parseInt(m[3], 10);
+  if (!month) return null;
+  return formatDateBE({ day, month, year });
+}
+
+function rowStatusFromCell(text: string, hasImg: boolean): MatchStatus {
+  const t = text.trim();
+  if (hasImg) return "LIVE";
+  if (t === "Official" || t === "Unofficial") return "FINISHED";
+  return "PENDING";
+}
+
+interface RawRow {
+  dateBE: string | null;
+  rawDate: string;
+  no: string;
+  time: string;
+  sportEvent: string;
+  parentSport: string;
+  round: string;
+  pair: string;
+  group: string;
+  teams: string;
+  venue: string;
+  status: MatchStatus;
+}
+
+/**
+ * Parses the giant single-page dump from `All_Print_DaybyDay.asp` —
+ * a list of every match across every competition day, used to power the
+ * cross-day overview / summary page.
+ */
+export async function fetchAllDayByDay(): Promise<AllOverview> {
+  const res = await fetch(ALL_DAY_BY_DAY_URL, {
+    cache: "no-store",
+    headers: {
+      "User-Agent":
+        "Mozilla/5.0 (compatible; SuratGamesDashboard/1.0; +https://suratgames.sat.or.th)",
+      Accept: "text/html,application/xhtml+xml",
+    },
+  });
+  if (!res.ok) {
+    throw new Error(`เซิร์ฟเวอร์ต้นทางตอบกลับ ${res.status} ${res.statusText}`);
+  }
+
+  const buf = Buffer.from(await res.arrayBuffer());
+  const html = iconv.decode(buf, "windows-874");
+  const $ = cheerio.load(html);
+
+  // The HTML embeds the same content multiple times under nested tables, so
+  // we walk the entire document in DOM order, dedupe by (date + cells), and
+  // tag every match row with the most-recently-seen "ประจำวันที่ ..." header.
+
+  const elementIndex = new WeakMap<object, number>();
+  $("*").each((i, el) => {
+    elementIndex.set(el as unknown as object, i);
+  });
+
+  const events: Array<
+    | { idx: number; kind: "date"; rawDate: string; dateBE: string | null }
+    | { idx: number; kind: "row"; row: RawRow }
+  > = [];
+
+  $("strong").each((_, el) => {
+    const text = clean($(el).text());
+    if (!text) return;
+    const dateBE = parseThaiDayHeader(text);
+    if (!dateBE) return;
+    const idx = elementIndex.get(el as unknown as object) ?? -1;
+    if (idx < 0) return;
+    events.push({ idx, kind: "date", rawDate: text, dateBE });
+  });
+
+  $("tr").each((_, tr) => {
+    const cells = $(tr).children("td,th").toArray();
+    if (cells.length !== 9) return;
+
+    const texts = cells.map((c) => clean($(c).text()));
+    const no = texts[0];
+    if (!/^\d+$/.test(no)) return;
+
+    const sportEvent = texts[2];
+    const parentSport = sportEvent.includes(" - ")
+      ? sportEvent.split(" - ")[0].trim()
+      : sportEvent;
+
+    const $statusCell = $(cells[8]);
+    const hasImg = $statusCell.find("img").length > 0;
+    const status = rowStatusFromCell(texts[8], hasImg);
+
+    const idx = elementIndex.get(tr as unknown as object) ?? -1;
+    if (idx < 0) return;
+
+    const group = texts[5] === ".None" ? "" : texts[5];
+
+    events.push({
+      idx,
+      kind: "row",
+      row: {
+        dateBE: null,
+        rawDate: "",
+        no,
+        time: texts[1],
+        sportEvent,
+        parentSport,
+        round: texts[3],
+        pair: texts[4],
+        group,
+        teams: texts[6],
+        venue: texts[7],
+        status,
+      },
+    });
+  });
+
+  events.sort((a, b) => a.idx - b.idx);
+
+  let currentDate: { rawDate: string; dateBE: string | null } | null = null;
+  const seen = new Set<string>();
+  const rows: RawRow[] = [];
+
+  for (const ev of events) {
+    if (ev.kind === "date") {
+      currentDate = { rawDate: ev.rawDate, dateBE: ev.dateBE };
+      continue;
+    }
+    if (!currentDate) continue;
+    const r = ev.row;
+    const key = `${currentDate.dateBE ?? currentDate.rawDate}|${r.no}|${r.time}|${r.sportEvent}|${r.round}|${r.pair}|${r.group}|${r.teams}|${r.venue}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    rows.push({
+      ...r,
+      dateBE: currentDate.dateBE,
+      rawDate: currentDate.rawDate,
+    });
+  }
+
+  // Daily aggregation, ordered by parsed BE date (chronological).
+  const dailyMap = new Map<string, OverviewDailyRow>();
+  for (const r of rows) {
+    if (!r.dateBE) continue;
+    const cur = dailyMap.get(r.dateBE) ?? {
+      rawLabel: r.rawDate,
+      dateBE: r.dateBE,
+      dateAD: dateBEToISO(parseDateBE(r.dateBE)!),
+      total: 0,
+      finished: 0,
+      live: 0,
+      pending: 0,
+      finals: 0,
+      finishedFinals: 0,
+    };
+    cur.total += 1;
+    if (r.status === "FINISHED") cur.finished += 1;
+    else if (r.status === "LIVE") cur.live += 1;
+    else cur.pending += 1;
+    if (isChampionshipRound(r.round)) {
+      cur.finals += 1;
+      if (r.status === "FINISHED") cur.finishedFinals += 1;
+    }
+    dailyMap.set(r.dateBE, cur);
+  }
+  const daily = [...dailyMap.values()].sort((a, b) =>
+    a.dateAD.localeCompare(b.dateAD)
+  );
+
+  // Per parent-sport aggregation.
+  const sportMap = new Map<string, OverviewSportRow>();
+  for (const r of rows) {
+    const cur = sportMap.get(r.parentSport) ?? {
+      name: r.parentSport,
+      total: 0,
+      finished: 0,
+      live: 0,
+      pending: 0,
+      finals: 0,
+      finishedFinals: 0,
+    };
+    cur.total += 1;
+    if (r.status === "FINISHED") cur.finished += 1;
+    else if (r.status === "LIVE") cur.live += 1;
+    else cur.pending += 1;
+    if (isChampionshipRound(r.round)) {
+      cur.finals += 1;
+      if (r.status === "FINISHED") cur.finishedFinals += 1;
+    }
+    sportMap.set(r.parentSport, cur);
+  }
+  const sports = [...sportMap.values()].sort((a, b) => b.total - a.total);
+
+  // Live matches list.
+  const liveMatches: OverviewLiveMatch[] = rows
+    .filter((r) => r.status === "LIVE")
+    .map((r) => ({
+      sport: r.sportEvent,
+      parentSport: r.parentSport,
+      event: r.sportEvent,
+      round: r.round,
+      time: r.time,
+      pair: r.pair,
+      group: r.group,
+      teams: r.teams,
+      venue: r.venue,
+      dateBE: r.dateBE ?? "",
+    }));
+
+  // Today's championship rounds (gold-medal events of the day).
+  const today = todayBE();
+  const todayFinals: OverviewTodayFinal[] = rows
+    .filter((r) => r.dateBE === today && isChampionshipRound(r.round))
+    .map((r) => ({
+      sport: r.sportEvent,
+      parentSport: r.parentSport,
+      event: r.sportEvent,
+      round: r.round,
+      time: r.time,
+      pair: r.pair,
+      group: r.group,
+      teams: r.teams,
+      venue: r.venue,
+      status: r.status,
+    }))
+    .sort((a, b) => a.time.localeCompare(b.time));
+
+  const totalMatches = rows.length;
+  const finishedMatches = rows.filter((r) => r.status === "FINISHED").length;
+  const liveMatchesCount = liveMatches.length;
+  const pendingMatches = totalMatches - finishedMatches - liveMatchesCount;
+  const totalFinals = rows.filter((r) => isChampionshipRound(r.round)).length;
+  const finishedFinals = rows.filter(
+    (r) => isChampionshipRound(r.round) && r.status === "FINISHED"
+  ).length;
+
+  const firstDateBE = daily[0]?.dateBE ?? "";
+  const lastDateBE = daily[daily.length - 1]?.dateBE ?? "";
+
+  return {
+    fetchedAt: new Date().toISOString(),
+    sourceUrl: ALL_DAY_BY_DAY_URL,
+    firstDateBE,
+    lastDateBE,
+    daily,
+    sports,
+    totals: {
+      totalDays: daily.length,
+      totalSports: sports.length,
+      totalMatches,
+      finishedMatches,
+      liveMatches: liveMatchesCount,
+      pendingMatches,
+      totalFinals,
+      finishedFinals,
+    },
+    liveMatches,
+    todayBE: today,
+    todayFinals,
   };
 }

@@ -17,22 +17,22 @@ export default function SiteNav({ current }: Props) {
     <nav className="flex flex-wrap gap-2" aria-label="เมนูหลัก">
       <Link
         href="/"
+        className={`${linkCls} ${current === "summary" ? activeCls : ""}`}
+      >
+        สรุปภาพรวม
+      </Link>
+      <Link
+        href="/daily"
         className={`${linkCls} ${current === "daily" ? activeCls : ""}`}
       >
         ตารางรายวัน
       </Link>
-      <Link
+      {/* <Link
         href="/schedule"
         className={`${linkCls} ${current === "grid" ? activeCls : ""}`}
       >
         ปฏิทินกีฬา
-      </Link>
-      <Link
-        href="/summary"
-        className={`${linkCls} ${current === "summary" ? activeCls : ""}`}
-      >
-        สรุป
-      </Link>
+      </Link> */}
     </nav>
   );
 }

@@ -1,5 +1,5 @@
-import SummaryDashboardMockup from "@/components/SummaryDashboard";
+import { permanentRedirect } from "next/navigation";
 
 export default function SummaryPage() {
-  return <SummaryDashboardMockup />;
+  permanentRedirect("/");
 }

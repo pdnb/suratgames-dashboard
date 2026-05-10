@@ -334,7 +334,7 @@ export default function ScheduleGridDashboard() {
                     className="w-12 min-w-12 border-r border-white/15 px-0.5 py-2 text-center font-semibold last:border-r-0"
                   >
                     <Link
-                      href={`/?date=${encodeURIComponent(d)}`}
+                      href={`/daily?date=${encodeURIComponent(d)}`}
                       className="block text-white underline-offset-2 hover:underline"
                     >
                       {shortDateBE(d)}
@@ -372,7 +372,7 @@ export default function ScheduleGridDashboard() {
                       finalCount: 0,
                     };
                     const cell = effectiveCell(raw, finalsOnly);
-                    const href = `/?date=${encodeURIComponent(d)}`;
+                    const href = `/daily?date=${encodeURIComponent(d)}`;
                     const inner =
                       cell.kind === "none" ? (
                         <span className="text-slate-300 dark:text-slate-600">

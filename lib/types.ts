@@ -121,6 +121,92 @@ export interface ScheduleGrid {
   };
 }
 
+/**
+ * Day-by-day overview parsed from `All_Print_DaybyDay.asp` —
+ * a single dump of every match across all 15 competition days.
+ */
+export interface OverviewDailyRow {
+  /** Original Thai header e.g. "ประจำวันที่ 03 พฤษภาคม 2569" */
+  rawLabel: string;
+  /** Buddhist-Era date in DD/MM/YYYY (parsed from the header). */
+  dateBE: string;
+  /** ISO (Gregorian) date YYYY-MM-DD. */
+  dateAD: string;
+  total: number;
+  finished: number;
+  live: number;
+  pending: number;
+  /** "รอบชิงชนะเลิศ" matches scheduled this day. */
+  finals: number;
+  finishedFinals: number;
+}
+
+export interface OverviewSportRow {
+  /** Parent sport e.g. "ฮอกกี้" (split before " - "). */
+  name: string;
+  total: number;
+  finished: number;
+  live: number;
+  pending: number;
+  finals: number;
+  finishedFinals: number;
+}
+
+export interface OverviewTotals {
+  totalDays: number;
+  totalSports: number;
+  totalMatches: number;
+  finishedMatches: number;
+  liveMatches: number;
+  pendingMatches: number;
+  totalFinals: number;
+  finishedFinals: number;
+}
+
+export interface OverviewLiveMatch {
+  sport: string;
+  parentSport: string;
+  event: string;
+  round: string;
+  time: string;
+  pair: string;
+  group: string;
+  teams: string;
+  venue: string;
+  dateBE: string;
+}
+
+export interface OverviewTodayFinal {
+  sport: string;
+  parentSport: string;
+  event: string;
+  round: string;
+  time: string;
+  pair: string;
+  group: string;
+  teams: string;
+  venue: string;
+  status: "FINISHED" | "LIVE" | "PENDING";
+}
+
+export interface AllOverview {
+  fetchedAt: string;
+  sourceUrl: string;
+  /** First/last day of the event (BE). */
+  firstDateBE: string;
+  lastDateBE: string;
+  /** Daily breakdown ordered by date. */
+  daily: OverviewDailyRow[];
+  /** Per parent-sport breakdown sorted by `total` descending. */
+  sports: OverviewSportRow[];
+  totals: OverviewTotals;
+  /** Currently LIVE matches (status cell shows the running.gif). */
+  liveMatches: OverviewLiveMatch[];
+  /** Today's รอบชิงชนะเลิศ list (date matches server "today" in BE). */
+  todayBE: string;
+  todayFinals: OverviewTodayFinal[];
+}
+
 export interface ApiError {
   error: string;
   detail?: string;

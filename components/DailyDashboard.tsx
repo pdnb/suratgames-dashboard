@@ -66,7 +66,7 @@ export function HeroBadge() {
   );
 }
 
-export default function Dashboard({ initialDate }: Props) {
+export default function DailyDashboard({ initialDate }: Props) {
   const [date, setDate] = useState<string>(initialDate);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
   const [selectedSports, setSelectedSports] = useState<Set<string>>(new Set());
@@ -242,7 +242,7 @@ export default function Dashboard({ initialDate }: Props) {
       <header className="mb-6 space-y-4">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
           <div className="space-y-2">
-            <HeroBadge />
+          <SiteNav current="daily" />
             <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50 sm:text-3xl">
               ตารางการแข่งขัน
               <span className="ml-2 text-sky-700 dark:text-sky-300">
