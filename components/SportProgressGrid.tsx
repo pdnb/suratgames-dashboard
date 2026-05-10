@@ -110,7 +110,7 @@ export default function SportProgressGrid({ sports }: Props) {
                 </h3>
                 {s.live > 0 && (
                   <span className="shrink-0 rounded-full bg-rose-500 px-1.5 py-0.5 text-[10px] font-bold text-white shadow-sm">
-                    LIVE {s.live}
+                    กำลังแข่ง {s.live}
                   </span>
                 )}
               </div>
