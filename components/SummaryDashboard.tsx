@@ -209,13 +209,13 @@ export default function SummaryDashboard() {
 
         <div className="flex flex-wrap items-center justify-end gap-2 text-xs text-slate-600 dark:text-slate-300">
           <span className="rounded-full border border-slate-900/10 px-3 py-1 dark:border-white/10">
-            อัปเดตล่าสุด:{" "}
+            อัปเดตล่าสุด{" "}
             <span className="font-mono">
               {formatRelative(overview?.fetchedAt)}
             </span>
           </span>
           <span className="rounded-full border border-slate-900/10 px-3 py-1 dark:border-white/10">
-            ตอนนี้:{" "}
+            ตอนนี้{" "}
             <span className="font-mono">
               {now ? now.toLocaleTimeString("th-TH") : "—"}
             </span>
