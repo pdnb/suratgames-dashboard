@@ -752,6 +752,8 @@ export async function fetchAllDayByDay(): Promise<AllOverview> {
       pending: 0,
       finals: 0,
       finishedFinals: 0,
+      finalsLive: 0,
+      finalsPending: 0,
     };
     cur.total += 1;
     if (r.status === "FINISHED") cur.finished += 1;
@@ -760,6 +762,8 @@ export async function fetchAllDayByDay(): Promise<AllOverview> {
     if (isChampionshipRound(r.round)) {
       cur.finals += 1;
       if (r.status === "FINISHED") cur.finishedFinals += 1;
+      else if (r.status === "LIVE") cur.finalsLive += 1;
+      else cur.finalsPending += 1;
     }
     dailyMap.set(r.dateBE, cur);
   }

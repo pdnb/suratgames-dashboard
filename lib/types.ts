@@ -139,6 +139,10 @@ export interface OverviewDailyRow {
   /** "รอบชิงชนะเลิศ" matches scheduled this day. */
   finals: number;
   finishedFinals: number;
+  /** Championship / gold-medal rounds still LIVE this day. */
+  finalsLive: number;
+  /** Championship / gold-medal rounds not yet started this day. */
+  finalsPending: number;
 }
 
 export interface OverviewSportRow {

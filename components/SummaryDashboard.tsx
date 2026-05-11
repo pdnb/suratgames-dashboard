@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import useSWR from "swr";
+import DailyFinalsProgressChart from "./DailyFinalsProgressChart";
 import DailyProgressChart from "./DailyProgressChart";
 import LiveMatchesPanel from "./LiveMatchesPanel";
 import SiteNav from "./SiteNav";
@@ -402,7 +403,11 @@ export default function SummaryDashboard() {
           />
 
           {overview && (
-            <div className="sm:col-span-2">
+            <div className="flex flex-col gap-4 sm:col-span-2">
+              <DailyFinalsProgressChart
+                daily={overview.daily}
+                todayBE={overview.todayBE}
+              />
               <DailyProgressChart
                 daily={overview.daily}
                 todayBE={overview.todayBE}
