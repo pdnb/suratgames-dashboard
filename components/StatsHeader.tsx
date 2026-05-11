@@ -104,7 +104,7 @@ function StatCard({
 export default function StatsHeader({ stats }: Props) {
   return (
     <div className="grid grid-cols-12 gap-3">
-      <div className="col-span-12 sm:col-span-4 md:col-span-3">
+      <div className="col-span-4 sm:col-span-4 md:col-span-6">
         <StatCard
           icon={Layers}
           label="ชนิดกีฬา"
@@ -112,7 +112,7 @@ export default function StatsHeader({ stats }: Props) {
           tone="primary"
         />
       </div>
-      <div className="col-span-12 sm:col-span-9 md:col-span-9">
+      <div className="col-span-8 sm:col-span-8 md:col-span-6">
         <StatCard
           icon={Trophy}
           label="รอบชิงชนะเลิศ"
