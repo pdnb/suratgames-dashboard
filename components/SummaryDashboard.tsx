@@ -8,6 +8,7 @@ import {
   CalendarRange,
   CheckCircle2,
   Hourglass,
+  LayoutGrid,
   ListChecks,
   Medal,
   RefreshCw,
@@ -184,6 +185,10 @@ export default function SummaryDashboard() {
     (d) => d.dateBE === overview?.todayBE
   );
 
+  const sportsFullyDoneCount = overview
+    ? overview.sports.filter((s) => s.total > 0 && s.finished === s.total).length
+    : 0;
+
   const overviewErr = (overviewError as Error) ?? null;
   const showOverviewError = overviewErr && !overview;
 
@@ -260,8 +265,35 @@ export default function SummaryDashboard() {
       {/* KPI cards */}
       <section
         aria-label="ตัวชี้วัดหลัก"
-        className="grid grid-cols-2 gap-3 lg:grid-cols-4"
+        className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5"
       >
+        <KpiCard
+          title="ชนิดกีฬา"
+          value={
+            totals
+              ? totals.totalSports.toLocaleString("th-TH")
+              : isLoadingOverview
+                ? "…"
+                : "—"
+          }
+          subtitle={
+            overview ? (
+              <div className="space-y-2">
+                {/* <p>
+                  แข่งครบทุกแมตช์{" "}
+                  {sportsFullyDoneCount.toLocaleString("th-TH")} /{" "}
+                  {overview.totals.totalSports.toLocaleString("th-TH")} ชนิด
+                </p> */}
+                <ProgressBar
+                  value={sportsFullyDoneCount}
+                  total={overview.totals.totalSports}
+                />
+              </div>
+            ) : undefined
+          }
+          icon={<LayoutGrid size={18} />}
+          accent="sky"
+        />
         <KpiCard
           title="แมตช์รวมทั้งงาน"
           value={
