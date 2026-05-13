@@ -121,7 +121,30 @@ export default function SportProgressGrid({ sports }: Props) {
                 )}
               </div>
 
-              <div className="mt-1 flex items-baseline gap-1">
+              {s.finals > 0 && (
+                <>
+                  <div className="mt-1 flex items-center justify-between text-[11px] text-amber-700 dark:text-amber-300">
+                    <span className="inline-flex items-baseline gap-1 font-medium">
+                      <Medal size={14} className="text-amber-600 dark:text-amber-400" />
+                      <span className="font-mono text-xl">{s.finishedFinals}</span> /{" "}
+                      <span className="font-mono text-xs">{s.finals}</span>
+                    </span>
+                    <span className="font-mono text-xs">{gold}%</span>
+                  </div>
+                  <div
+                    className="mt-1 h-1.5 overflow-hidden rounded-full bg-amber-500/15 dark:bg-amber-500/20"
+                    aria-label={`ชิงเหรียญทองคืบหน้า ${gold}%`}
+                  >
+                    <div
+                      className="h-full bg-amber-500"
+                      style={{ width: `${gold}%` }}
+                    />
+                  </div>
+                </>
+              )}
+              
+
+              <div className="mt-1.5 flex items-baseline gap-1">
                 <span className="font-mono text-xl font-bold text-slate-900 dark:text-slate-50">
                   {s.finished.toLocaleString("th-TH")}
                 </span>
@@ -143,27 +166,6 @@ export default function SportProgressGrid({ sports }: Props) {
                 />
               </div>
 
-              {s.finals > 0 && (
-                <>
-                  <div className="mt-2 flex items-center justify-between text-[11px] text-amber-700 dark:text-amber-300">
-                    <span className="inline-flex items-baseline gap-1 font-medium">
-                      <Medal size={14} className="text-amber-600 dark:text-amber-400" />
-                      <span className="font-mono text-xl">{s.finishedFinals}</span> /{" "}
-                      <span className="font-mono text-xs">{s.finals}</span>
-                    </span>
-                    <span className="font-mono text-xs">{gold}%</span>
-                  </div>
-                  <div
-                    className="mt-1 h-1.5 overflow-hidden rounded-full bg-amber-500/15 dark:bg-amber-500/20"
-                    aria-label={`ชิงเหรียญทองคืบหน้า ${gold}%`}
-                  >
-                    <div
-                      className="h-full bg-amber-500"
-                      style={{ width: `${gold}%` }}
-                    />
-                  </div>
-                </>
-              )}
 
               {/* <div className="mt-2 text-[11px] text-slate-600 dark:text-slate-300">
                 รอแข่ง{" "}
