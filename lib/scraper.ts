@@ -607,8 +607,9 @@ function parseThaiDayHeader(text: string): string | null {
 
 function rowStatusFromCell(text: string, hasImg: boolean): MatchStatus {
   const t = text.trim();
-  if (hasImg) return "LIVE";
-  if (t === "Official" || t === "Unofficial") return "FINISHED";
+  if (hasImg || t === "Unofficial") return "LIVE";
+  // if (t === "Official" || t === "Unofficial") return "FINISHED";
+  if (t === "Official") return "FINISHED";
   return "PENDING";
 }
 
