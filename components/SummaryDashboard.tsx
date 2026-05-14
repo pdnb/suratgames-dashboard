@@ -490,8 +490,8 @@ export default function SummaryDashboard() {
         ) : null}
       </section>
 
-      <footer className="mt-6 text-center text-[11px] text-slate-500 dark:text-slate-400">
-        ข้อมูลจาก{" "}
+      <footer className="mt-10 border-t border-slate-900/10 pt-6 text-center text-sm text-slate-500 dark:border-white/5 dark:text-slate-500">
+        {/* ข้อมูลจาก{" "}
         <a
           href={overview?.sourceUrl ?? "https://suratgames.sat.or.th/"}
           target="_blank"
@@ -499,9 +499,8 @@ export default function SummaryDashboard() {
           className="underline-offset-2 hover:underline"
         >
           suratgames.sat.or.th
-        </a>{" "}
-        · ภาพรวม{" "}
-        {finalsPct}% ของรอบชิงเหรียญทอง
+        </a> */}
+        <p>ออกแบบและพัฒนาโดย <a href="https://cc.sru.ac.th" target="_blank" rel="noreferrer">ศูนย์คอมพิวเตอร์ มหาวิทยาลัยสุราษฎร์ธานี</a> ร่วมกับ <a href="https://www.sat.or.th" target="_blank" rel="noreferrer">ฝ่ายเทคโนโลยีสารสนเทศ การกีฬาแห่งประเทศไทย</a></p>
       </footer>
     </main>
   );
