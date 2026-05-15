@@ -438,7 +438,7 @@ export default function DailyDashboard({ initialDate }: Props) {
       <footer className="mt-10 border-t border-slate-900/10 pt-6 text-center text-sm text-slate-500 dark:border-white/5 dark:text-slate-500">
         {/* ข้อมูลจาก suratgames.sat.or.th • รีเฟรชอัตโนมัติทุก {REFRESH_MS / 1000}{" "}
         วินาที • เวลาเริ่มเป็นค่าโดยประมาณ ตารางอาจมีการเปลี่ยนแปลง */}
-        <p>ออกแบบและพัฒนาโดย <a href="https://cc.sru.ac.th" target="_blank" rel="noreferrer">ศูนย์คอมพิวเตอร์ มหาวิทยาลัยสุราษฎร์ธานี</a> ร่วมกับ <a href="https://www.sat.or.th" target="_blank" rel="noreferrer">ฝ่ายเทคโนโลยีสารสนเทศ การกีฬาแห่งประเทศไทย</a></p>
+        <p>ออกแบบและพัฒนาโดย <a href="https://cc.sru.ac.th" target="_blank" rel="noreferrer">ศูนย์คอมพิวเตอร์ มหาวิทยาลัยราชภัฏสุราษฎร์ธานี</a> ร่วมกับ <a href="https://www.sat.or.th" target="_blank" rel="noreferrer">ฝ่ายเทคโนโลยีสารสนเทศ การกีฬาแห่งประเทศไทย</a></p>
       </footer>
     </main>
   );

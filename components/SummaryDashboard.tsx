@@ -500,7 +500,7 @@ export default function SummaryDashboard() {
         >
           suratgames.sat.or.th
         </a> */}
-        <p>ออกแบบและพัฒนาโดย <a href="https://cc.sru.ac.th" target="_blank" rel="noreferrer">ศูนย์คอมพิวเตอร์ มหาวิทยาลัยสุราษฎร์ธานี</a> ร่วมกับ <a href="https://www.sat.or.th" target="_blank" rel="noreferrer">ฝ่ายเทคโนโลยีสารสนเทศ การกีฬาแห่งประเทศไทย</a></p>
+        <p>ออกแบบและพัฒนาโดย <a href="https://cc.sru.ac.th" target="_blank" rel="noreferrer">ศูนย์คอมพิวเตอร์ มหาวิทยาลัยราชภัฏสุราษฎร์ธานี</a> ร่วมกับ <a href="https://www.sat.or.th" target="_blank" rel="noreferrer">ฝ่ายเทคโนโลยีสารสนเทศ การกีฬาแห่งประเทศไทย</a></p>
       </footer>
     </main>
   );
