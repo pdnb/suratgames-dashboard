@@ -24,6 +24,7 @@ http://localhost:3000/?date=05/05/2569   → redirect ไป /daily?date=05%2F05
 
 **สรุปภาพรวม (`/`)**
 
+- หัวข้องานปรับได้ผ่าน `NEXT_PUBLIC_EVENT_TITLE` / `NEXT_PUBLIC_EVENT_SUBTITLE`
 - สรุปตัวเลขรวม (แมตช์, รอบชิง, สถานะ LIVE / จบ / รอ)
 - กราฟและรายการที่อิงข้อมูล day-by-day จากต้นทาง
 - แผงแมตช์ที่กำลังแข่ง และรายการรอบชิงของวันนี้ (ตามวันที่ พ.ศ. ของเซิร์ฟเวอร์)
@@ -33,7 +34,9 @@ http://localhost:3000/?date=05/05/2569   → redirect ไป /daily?date=05%2F05
 **ตารางรายวัน (`/daily`)**
 
 - เลือกวันที่แบบ **พ.ศ.** (ปุ่มเลื่อนวันก่อน/ถัดไป)
-- กรองตาม **สถานะ** (กำลังแข่ง / รอแข่ง / จบแล้ว) และ **ชนิดกีฬา**; ค้นหาตามทีม / รายการ / สนาม
+- กรองตาม **สถานะ** (กำลังแข่ง / รอแข่ง / จบแล้ว), **ชนิดกีฬา** และ **รอบการแข่งขัน**; ค้นหาตามทีม / รายการ / สนาม
+- **ชนิดกีฬาที่ชอบ** (ดาว) — จัดเรียงขึ้นบน; เก็บใน `localStorage` (`favorite-sports`)
+- สลับมุมมองแมตช์ **กริด / รายการ** (`LayoutModeToggle`); จำค่าใน `localStorage` (`match-layout`)
 - การ์ดแมตช์ LIVE มีขอบเน้นและ pulse; จัดเรียงให้ขึ้นบน
 - รีเฟรชอัตโนมัติ **ทุก 5 นาที** + ปุ่มรีเฟรชทันที + เวลาอัปเดตล่าสุด (SWR, revalidate on focus)
 
@@ -45,7 +48,7 @@ http://localhost:3000/?date=05/05/2569   → redirect ไป /daily?date=05%2F05
 ## สถาปัตยกรรม
 
 ```
-Browser ─┬─► GET /api/schedule?date=…        ──► lib/scraper.ts ──► suratgames.sat.or.th
+Browser ─┬─► GET /api/schedule?date=…        ──► lib/scraper.ts ──► SOURCE_BASE_URL (env)
          ├─► GET /api/all-overview           │     • Buffer → iconv-lite (windows-874 → UTF-8)
          ├─► GET /api/medals                 │     • cheerio → JSON ตาม type ใน lib/types.ts
          ├─► GET /api/schedule-grid          │
@@ -77,23 +80,39 @@ app/
     schedule-final/route.ts
 components/
   SummaryDashboard.tsx, DailyDashboard.tsx, ScheduleGridDashboard.tsx
-  SiteNav.tsx, ThemeToggle.tsx, RefreshIndicator.tsx
+  SiteNav.tsx, ThemeToggle.tsx, RefreshIndicator.tsx, LayoutModeToggle.tsx
   DatePickerBE.tsx, FilterBar.tsx, StatsHeader.tsx
   SportSection.tsx, MatchRow.tsx, StatusBadge.tsx, ChampionshipSection.tsx
   LiveMatchesPanel.tsx, TopMedalsWidget.tsx, SportProgressGrid.tsx
   DailyProgressChart.tsx, DailyFinalsProgressChart.tsx, TodayFinalsList.tsx
   …
 lib/
-  types.ts, date.ts, scraper.ts
+  types.ts, date.ts, scraper.ts, site-config.ts
   championship-round.ts, round-order.ts, favorite-sports.ts, match-layout.ts
   theme.tsx
+.env.example
 ```
+
+## การตั้งค่า (Environment)
+
+คัดลอกจาก [`.env.example`](.env.example) เป็น `.env.local` แล้วปรับตามต้องการ:
+
+| ตัวแปร | ขอบเขต | คำอธิบาย |
+| ------ | ------ | -------- |
+| `SOURCE_BASE_URL` | Server | URL ฐานของเว็บต้นทางสำหรับ scrape (ค่าเริ่มต้น `https://suratgames.sat.or.th/`) |
+| `NEXT_PUBLIC_EVENT_TITLE` | Client | หัวข้อหลักบนหน้าสรุปภาพรวม (`/`) |
+| `NEXT_PUBLIC_EVENT_SUBTITLE` | Client | คำบรรยายใต้หัวข้อบนหน้าสรุปภาพรวม |
+
+ค่าที่อ่านจาก env รวมศูนย์ที่ [`lib/site-config.ts`](lib/site-config.ts) — scraper ใช้ `SOURCE_BASE_URL` สร้างลิงก์ทุกหน้าต้นทาง
 
 ## การติดตั้งและรัน
 
 ต้องการ Node.js เวอร์ชัน **18.18+** หรือใหม่กว่า
 
+### Development (พัฒนาในเครื่อง)
+
 ```bash
+cp .env.example .env.local   # Windows: copy .env.example .env.local
 npm install
 npm run dev
 ```
@@ -104,12 +123,60 @@ npm run dev
 npm run lint
 ```
 
-### Build / Production
+### Production (เซิร์ฟเวอร์ / deploy)
 
-```bash
-npm run build
-npm start
-```
+ขั้นตอนสำหรับรันแบบ production บนเครื่องหรือ VPS (ไม่ใช่ `next dev`):
+
+1. **ตั้งค่า environment** — สร้าง `.env.local` (หรือตั้งตัวแปรในระบบ deploy) จาก [`.env.example`](.env.example):
+
+   ```bash
+   cp .env.example .env.local   # Windows: copy .env.example .env.local
+   ```
+
+   | ตัวแปร | หมายเหตุ production |
+   | ------ | ------------------- |
+   | `SOURCE_BASE_URL` | ต้องเข้าถึงได้จากเซิร์ฟเวอร์ (outbound HTTP ไปเว็บต้นทาง) |
+   | `NEXT_PUBLIC_EVENT_*` | ฝังตอน **`npm run build`** — เปลี่ยนค่าต้อง build ใหม่ |
+
+2. **ติดตั้ง dependencies และ build**
+
+   ```bash
+   npm ci
+   npm run build
+   ```
+
+   `npm ci` ใช้ lockfile ให้เวอร์ชันแพ็กเกจตรงกับที่ทดสอบแล้ว (แนะนำบนเซิร์ฟเวอร์) — ถ้าไม่มี `package-lock.json` ให้ใช้ `npm install` แทน
+
+3. **สตาร์ทแอป**
+
+   ```bash
+   npm start
+   ```
+
+   ค่าเริ่มต้นฟังที่พอร์ต **3000** — เปลี่ยนพอร์ตได้:
+
+   ```bash
+   # Linux / macOS
+   PORT=8080 npm start
+
+   # Windows (PowerShell)
+   $env:PORT=8080; npm start
+   ```
+
+   เปิด <http://localhost:3000> (หรือพอร์ตที่ตั้ง) — ใช้ reverse proxy (เช่น Nginx, Caddy) หน้า Node ถ้าต้องการ HTTPS หรือโดเมนจริง
+
+4. **รันค้างหลังปิดเทอร์มินัล (ตัวเลือก)** — ใช้ process manager เช่น [PM2](https://pm2.keymetrics.io/):
+
+   ```bash
+   npm install -g pm2
+   pm2 start npm --name suratgame-dashboard -- start
+   pm2 save
+   pm2 startup
+   ```
+
+**Deploy บน Vercel / แพลตฟอร์ม serverless:** push repo แล้วตั้ง Environment Variables ใน dashboard ให้ตรงกับ `.env.example` (โดยเฉพาะ `NEXT_PUBLIC_*` ก่อน build) — API routes จะ scrape ฝั่ง server ตาม `SOURCE_BASE_URL` เช่นเดียวกับรันด้วย `npm start`
+
+**ตรวจหลัง deploy:** ลอง `GET /api/medals` และเปิด `/` กับ `/daily` ว่าโหลดข้อมูลและภาษาไทยถูกต้อง
 
 ## API
 
