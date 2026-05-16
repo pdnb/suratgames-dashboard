@@ -23,6 +23,7 @@ import SiteNav from "./SiteNav";
 import SportProgressGrid from "./SportProgressGrid";
 import TodayFinalsList from "./TodayFinalsList";
 import TopMedalsWidget from "./TopMedalsWidget";
+import { EVENT_SUBTITLE, EVENT_TITLE } from "@/lib/site-config";
 
 /** รีเฟรชข้อมูลอัตโนมัติทุก 5 นาที */
 const SWR_REFRESH_MS = 5 * 60_000;
@@ -199,9 +200,9 @@ export default function SummaryDashboard() {
           <SiteNav current="summary" />
           <h1 className="mt-3 text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50 sm:text-3xl">
             <span className="text-sky-700 dark:text-sky-300">
-              สุราษฎร์ธานีเกมส์
+              {EVENT_TITLE}
             </span>{" "}
-            กีฬาเยาวชนแห่งชาติครั้งที่ 41
+            {EVENT_SUBTITLE}
           </h1>
           {overview && (
             <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">

@@ -22,12 +22,12 @@ import type {
   Sport,
 } from "./types";
 import { dateBEToISO, formatDateBE, parseDateBE, todayBE } from "./date";
+import { SOURCE_BASE_URL } from "./site-config";
 
-const BASE_URL = "https://suratgames.sat.or.th/";
-const MEDAL_URL = `${BASE_URL}total_medal-dwt.asp`;
-const SCHEDULE_FINAL_URL = `${BASE_URL}schedule_final-dwt.asp`;
-const SCHEDULE_GRID_URL = `${BASE_URL}Schedule-dwt.asp`;
-const ALL_DAY_BY_DAY_URL = `${BASE_URL}All_Print_DaybyDay.asp?clickid=`;
+const MEDAL_URL = `${SOURCE_BASE_URL}total_medal-dwt.asp`;
+const SCHEDULE_FINAL_URL = `${SOURCE_BASE_URL}schedule_final-dwt.asp`;
+const SCHEDULE_GRID_URL = `${SOURCE_BASE_URL}Schedule-dwt.asp`;
+const ALL_DAY_BY_DAY_URL = `${SOURCE_BASE_URL}All_Print_DaybyDay.asp?clickid=`;
 
 const HEADER_LABELS = [
   "รายการ",
@@ -53,7 +53,7 @@ function absUrl(href: string | undefined | null): string | null {
   const trimmed = href.trim();
   if (!trimmed || trimmed === "#") return null;
   try {
-    return new URL(trimmed, BASE_URL).toString();
+    return new URL(trimmed, SOURCE_BASE_URL).toString();
   } catch {
     return null;
   }
@@ -78,7 +78,7 @@ function detectStatus($cell: cheerio.Cheerio<any>): MatchStatus {
 }
 
 function buildSourceUrl(dateBE: string): string {
-  return `${BASE_URL}compettable2-dwt.asp?dateid=${encodeURIComponent(dateBE)}`;
+  return `${SOURCE_BASE_URL}compettable2-dwt.asp?dateid=${encodeURIComponent(dateBE)}`;
 }
 
 function parseMedalNumber(value: string): number {
